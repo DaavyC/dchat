@@ -10,6 +10,9 @@
       "flags": {}
     }
   ],
+  "url": "https://github.com/DaavyC/dchat",
+  "manifest": "https://github.com/DaavyC/dchat/raw/main/module.json",
+  "download": "https://github.com/DaavyC/dchat/archive/refs/heads/main.zip",
   "compatibility": {
     "minimum": "13",
     "verified": "13"
@@ -30,6 +33,5 @@
       "name": "English",
       "path": "languages/en.json"
     }
-  ],
-  "flags": {}
+  ]
 }
