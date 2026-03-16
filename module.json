@@ -1,0 +1,35 @@
+{
+  "id": "dchat",
+  "title": "Daavy's Chat",
+  "description": "<p>Organizes the chat sidebar into independent tabs (Chat, Game, Whispers) and adds several chat quality-of-life features: Hide Avatars, Compact Traits, Hide Useless Traits, Collapsible Formulas, and Toggleable Damage Buttons.</p>",
+  "version": "1.0",
+  "authors": [
+    {
+      "name": "Daavy",
+      "discord": "daavy",
+      "flags": {}
+    }
+  ],
+  "compatibility": {
+    "minimum": "13",
+    "verified": "13"
+  },
+  "esmodules": [
+    "scripts/js/core.js",
+    "scripts/js/data/traits.js",
+    "scripts/js/features.js",
+    "scripts/js/data/ui.js",
+    "scripts/main.mjs"
+  ],
+  "styles": [
+    "styles/main.css"
+  ],
+  "languages": [
+    {
+      "lang": "en",
+      "name": "English",
+      "path": "languages/en.json"
+    }
+  ],
+  "flags": {}
+}
