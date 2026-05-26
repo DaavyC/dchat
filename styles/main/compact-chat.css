@@ -1,0 +1,20 @@
+.chat-message.dchat-compact-chat header,
+.chat-message.dchat-compact-chat .message-header {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    align-items: center !important;
+    line-height: 1 !important;
+}
+
+.chat-message.dchat-compact-chat header .message-sender,
+.chat-message.dchat-compact-chat .message-header .message-sender {
+    margin-right: 5px !important;
+    margin-bottom: 0 !important;
+}
+
+.chat-message.dchat-compact-chat header .flavor-text,
+.chat-message.dchat-compact-chat .message-header .flavor-text {
+    margin-left: 0 !important;
+    padding-left: 0 !important;
+    display: inline-block !important;
+}

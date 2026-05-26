@@ -1,0 +1,27 @@
+.chat-message.dchat-hide-damage-traits:has(.damage-roll) .flavor-text .tags[data-tooltip-class="pf2e"] {
+    display: none !important;
+}
+
+.chat-message.dchat-hide-damage-traits:has(.damage-roll) .flavor-text > hr:first-of-type {
+    display: none !important;
+}
+
+.chat-message.dchat-trait-filter .tags span.tag:is([data-trait], [data-slug]):not(.tag_transparent).dchat-hidden {
+    display: none !important;
+}
+
+.chat-message.dchat-trait-filter .tags.dchat-expanded span.tag:is([data-trait], [data-slug]):not(.tag_transparent).dchat-hidden {
+    display: inline-flex !important;
+}
+
+.chat-message.dchat-trait-filter .tags span.tag:is([data-trait], [data-slug]):not(.tag_transparent).dchat-clickable {
+    cursor: pointer;
+}
+
+.chat-message.dchat-trait-filter .tags span.tag:is([data-trait], [data-slug]):not(.tag_transparent).dchat-clickable:hover {
+    opacity: 0.8;
+}
+
+.chat-message.dchat-trait-filter .tags .tag.dchat-filtered {
+    display: none !important;
+}

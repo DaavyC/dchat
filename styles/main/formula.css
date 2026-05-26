@@ -1,0 +1,11 @@
+.chat-message.dchat-collapsible-formula .dice-formula {
+    display: none !important;
+}
+
+.chat-message.dchat-collapsible-formula .dice-formula.dchat-show {
+    display: block !important;
+}
+
+.chat-message.dchat-collapsible-formula .dice-roll h4:hover {
+    opacity: 0.8;
+}

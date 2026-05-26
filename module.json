@@ -1,0 +1,50 @@
+{
+  "id": "dchat",
+  "title": "Daavy's Chat",
+  "description": "<p>Organizes chat into Chat, Game, and Whispers tabs and adds modular quality-of-life improvements for the chat log.</p>",
+  "version": "1.4.3",
+  "type": "module",
+  "license": "LICENSE",
+  "authors": [
+    {
+      "name": "Daavy",
+      "discord": "daavy",
+      "flags": {}
+    }
+  ],
+  "url": "https://github.com/DaavyC/dchat",
+  "manifest": "https://github.com/DaavyC/dchat/raw/main/module.json",
+  "download": "https://github.com/DaavyC/dchat/archive/refs/heads/main.zip",
+  "compatibility": {
+    "minimum": "14",
+    "verified": "14",
+    "maximum": "14"
+  },
+  "esmodules": [
+    "scripts/js/core.js",
+    "scripts/js/data/traits.js",
+    "scripts/js/features.js",
+    "scripts/js/data/ui.js",
+    "scripts/main.mjs"
+  ],
+  "styles": [
+    "styles/main/toolbar.css",
+    "styles/main/settings.css",
+    "styles/main/tabs.css",
+    "styles/main/message-filters.css",
+    "styles/main/cleaner-chat.css",
+    "styles/main/traits.css",
+    "styles/main/formula.css",
+    "styles/main/compact-chat.css",
+    "styles/main/whisper-autocomplete.css",
+    "styles/main/damage-buttons.css"
+  ],
+  "languages": [
+    {
+      "lang": "en",
+      "name": "English",
+      "path": "languages/en.json"
+    }
+  ],
+  "media": []
+}
