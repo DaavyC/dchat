@@ -4,6 +4,10 @@ A simple module for **Foundry VTT** that organizes the chat log into tabs and ad
 
 ---
 
+[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/C1I7209LY1)
+
+---
+
 ## 🗂️ Features
 
 - **💬 Chat Tabs** — Splits messages into Chat, Game, and Whispers tabs.
