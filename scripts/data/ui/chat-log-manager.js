@@ -1,21 +1,15 @@
-import { MessageClassifier, getElement } from "../../core.js";
+import { MessageClassifier, getDocument, getElement } from "../../core.js";
 import { ChatTabsManager } from "./chat-tabs-manager.js";
-import { registerChatRefreshHooks } from "./refresh-hooks.js";
 
 export class ChatLogManager {
     static _observers = new WeakMap();
     static BATCH_SIZE = 100;
 
-    static init() {
-        Hooks.on("renderChatLog", (app, html) => {
-            const element = getElement(html);
-            this._observeAndReplace(element);
-        });
-
-        registerChatRefreshHooks(this);
+    static observeChatLog(html) {
+        this._observeAndReplace(getElement(html));
     }
 
-    static _scheduleRefresh(element = null) {
+    static scheduleRefresh(element = null) {
         requestAnimationFrame(() => this.refresh(element));
     }
 
@@ -78,7 +72,7 @@ export class ChatLogManager {
             return;
         }
 
-        const doc = element.ownerDocument ?? globalThis.document;
+        const doc = getDocument(element);
         const scopedBtn = scopedButtons.shift() ?? null;
         scopedButtons.forEach(button => button.remove());
 

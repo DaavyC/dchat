@@ -1,4 +1,4 @@
-import { MODULE_ID, getElement } from "../../core.js";
+import { MODULE_ID, getDocument, getElement } from "../../core.js";
 
 export class SettingsManager {
     static MODULE_ID = MODULE_ID;
@@ -8,15 +8,11 @@ export class SettingsManager {
         "PF2eOnly": ["hideDamageTraits", "traitFilter", "hideDamageButtons"]
     };
 
-    static init() {
-        Hooks.on("renderSettingsConfig", (app, html) => this.groupSettings(html));
-    }
-
     static groupSettings(html) {
         const container = getElement(html);
         if (!container) return;
 
-        const doc = container.ownerDocument || document;
+        const doc = getDocument(container);
 
         for (const [groupKey, settingKeys] of Object.entries(this.GROUPS)) {
             this._groupSettingRows(container, doc, groupKey, settingKeys);

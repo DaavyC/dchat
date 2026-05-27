@@ -1,47 +1,32 @@
 # 💬 Daavy's Chat
 
-A lightweight chat enhancement module for **Foundry VTT**. It splits chat into separate tabs and adds optional features that reduce noise and improve readability.
+A simple module for **Foundry VTT** that organizes the chat log into tabs and adds small quality-of-life tools for cleaner chat messages.
 
 ---
 
-## 🗂️ Core Features
+## 🗂️ Features
 
-- **📑 Tabbed Interface** — Separates chat into **Chat**, **Game** (rolls and actions), and **Whispers**.
-- **🧠 Smart Classification** — Routes system messages, action cards, and dice rolls to the **Game** tab.
-- **🔔 Notification Pips** — Marks inactive tabs when new messages arrive.
-- **🧹 Scoped Clear** — Clears the active tab by default, or every tab with **SHIFT + click**.
-
----
-
-## ✨ Modular Enhancements
-
-Each feature can be enabled or disabled in the module settings.
-
-- **👤 Cleaner Chat** — Hides user avatars and names to reduce vertical space.
-- **📏 Compact Chat** — Uses a tighter chat layout.
-- **📉 Collapsible Formula** — Hides roll formulas behind a clickable header.
-- **🤫 Autocomplete Whisper** — Adds inline recipient autocomplete for `/w` and `/whisper`, including multi-recipient selection.
-- **🙈 Hide Private Messages** — Hides private rolls from users who should not see them.
-- **⏱️ Hide Chat Initiative** — Prevents initiative roll messages from being created in chat.
-- **🛡️ Hide Damage Traits (PF2e)** — Removes damage trait tags from PF2e damage rolls.
-- **🏷️ Trait Filter (PF2e)** — Hides low-value PF2e traits and limits the visible trait list to three entries until expanded.
-- **👁️ Hide Damage Buttons (PF2e)** — Hides PF2e damage buttons by default.
+- **💬 Chat Tabs** — Splits messages into Chat, Game, and Whispers tabs.
+- **🧹 Scoped Clearing** — Lets the Game Master clear the active tab, or all tabs with SHIFT.
+- **🔒 Whisper Helper** — Suggests player names while typing `/w` or `/whisper`.
+- **🎲 Cleaner Rolls** — Hides or collapses noisy roll details when enabled.
 
 ---
 
 ## ⚙️ Settings
 
-The settings UI is organized into **Settings** and **PF2e Only** groups.
-
-- Most features are **client-scoped**.
-- **Hide Private Messages** and **Hide Chat Initiative** are **world-scoped** and **GM only**.
+- **Cleaner Chat** — Hides avatars and usernames in chat headers.
+- **Compact Chat** — Applies a smaller and cleaner chat layout.
+- **Autocomplete Whisper** — Shows whisper recipient suggestions while typing.
+- **Chat Cleanup** — Hide initiative messages, private rolls, and dice formulas.
+- **PF2e Options** — Hide damage traits, extra traits, and damage buttons.
 
 ---
 
 ## 🛠️ Compatibility
 
-- **Foundry VTT**: Version 14.
-- **Systems**: System-agnostic for tabs and general features, with PF2e-specific enhancements where noted.
+- **Foundry VTT**: Version 14
+- **Systems**: System-agnostic, with optional PF2e features.
 
 ---
 
@@ -52,4 +37,4 @@ The settings UI is organized into **Settings** and **PF2e Only** groups.
 
 ---
 
-> This module was built for personal use with AI-assisted development.
+> This module was built with AI-assisted development.

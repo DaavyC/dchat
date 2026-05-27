@@ -1,5 +1,5 @@
-import { MODULE_ID, getElement } from "../core.js";
-import { registerBooleanSetting } from "./settings.js";
+import { getElement, isCurrentUserAuthor } from "../core.js";
+import { isSettingEnabled, registerBooleanSetting } from "./settings.js";
 
 export class HidePrivateMessages {
     static _notifyPatched = false;
@@ -12,8 +12,10 @@ export class HidePrivateMessages {
             scope: "world",
             restricted: true,
         });
+    }
 
-        Hooks.once("ready", () => this._patchChatLogNotify());
+    static onReady() {
+        this._patchChatLogNotify();
     }
 
     // Patches chat notifications for hidden private rolls.
@@ -26,7 +28,7 @@ export class HidePrivateMessages {
 
         const self = this;
         ChatLog.prototype.notify = function (message, options) {
-            if (game.settings.get(MODULE_ID, "hidePrivateMessages") && self.shouldHideMessage(message)) return;
+            if (isSettingEnabled("hidePrivateMessages") && self.shouldHideMessage(message)) return;
             return originalNotify.call(this, message, options);
         };
 
@@ -35,7 +37,7 @@ export class HidePrivateMessages {
 
     // Checks if the current user authored a message.
     static isAuthor(message) {
-        return message?.author?.id === game.user?.id;
+        return isCurrentUserAuthor(message);
     }
 
     // Checks if a private roll should be hidden.

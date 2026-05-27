@@ -1,6 +1,8 @@
+import { getDocument } from "../../core.js";
+
 export function replaceEditorRange(state, from, to, replacement, caretOffset = replacement.length) {
     const editable = state.editable;
-    const doc = editable.ownerDocument ?? globalThis.document;
+    const doc = getDocument(editable);
     const selection = doc.getSelection?.();
     const range = createTextRange(editable, from, to);
     if (!selection || !range) return;
@@ -17,7 +19,7 @@ export function replaceEditorRange(state, from, to, replacement, caretOffset = r
 }
 
 export function createTextRange(root, start, end) {
-    const doc = root.ownerDocument ?? globalThis.document;
+    const doc = getDocument(root);
     const range = doc.createRange();
     const startPoint = locateTextBoundary(root, start);
     const endPoint = locateTextBoundary(root, end);
@@ -54,7 +56,7 @@ function restoreCaret(editable, selection, from, caretOffset) {
 }
 
 function locateTextBoundary(root, targetOffset) {
-    const doc = root.ownerDocument ?? globalThis.document;
+    const doc = getDocument(root);
     const view = doc.defaultView ?? globalThis;
     const nodeFilter = view.NodeFilter ?? NodeFilter;
     const walker = doc.createTreeWalker(root, nodeFilter.SHOW_TEXT);

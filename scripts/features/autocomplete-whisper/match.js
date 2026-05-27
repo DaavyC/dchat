@@ -1,3 +1,5 @@
+import { getDocument } from "../../core.js";
+
 export const PREFIX_PATTERN = /^(\/w|\/whisper)\s+/i;
 
 export function getEditorText(editable) {
@@ -7,7 +9,7 @@ export function getEditorText(editable) {
 }
 
 export function getSelectionOffsets(editable) {
-    const doc = editable?.ownerDocument ?? globalThis.document;
+    const doc = getDocument(editable);
     const selection = doc.getSelection?.();
     if (!selection?.rangeCount) return null;
 

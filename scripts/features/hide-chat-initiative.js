@@ -1,5 +1,4 @@
-import { MODULE_ID } from "../core.js";
-import { expandObject, getProperty, registerBooleanSetting } from "./settings.js";
+import { expandObject, getProperty, isSettingEnabled, registerBooleanSetting } from "./settings.js";
 
 export class HideChatInitiative {
     // Registers the initiative hiding setting.
@@ -9,15 +8,15 @@ export class HideChatInitiative {
             hint: "DCHAT.Settings.hideChatInitiative.Hint",
             scope: "world"
         });
+    }
 
-        Hooks.on("preCreateChatMessage", (message, data) => {
-            if (!game.settings.get(MODULE_ID, "hideChatInitiative")) return;
+    static preCreateChatMessage(message, data) {
+        if (!isSettingEnabled("hideChatInitiative")) return;
 
-            const source = data ? expandObject(data) : message.toObject();
-            if (!this.isInitiativeMessage(source)) return;
+        const source = data ? expandObject(data) : message.toObject();
+        if (!this.isInitiativeMessage(source)) return;
 
-            return false;
-        });
+        return false;
     }
 
     // Checks if a chat message is an initiative roll.

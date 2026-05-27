@@ -2,49 +2,45 @@
   "id": "dchat",
   "title": "Daavy's Chat",
   "description": "<p>Organizes chat into Chat, Game, and Whispers tabs and adds modular quality-of-life improvements for the chat log.</p>",
-  "version": "1.4.3",
-  "type": "module",
-  "license": "LICENSE",
+  "version": "1.4.4",
   "authors": [
     {
       "name": "Daavy",
       "discord": "daavy",
+      "email": "Daavyc@gmail.com",
+      "url": "https://github.com/DaavyC",
       "flags": {}
     }
   ],
   "url": "https://github.com/DaavyC/dchat",
-  "manifest": "https://github.com/DaavyC/dchat/raw/main/module.json",
-  "download": "https://github.com/DaavyC/dchat/archive/refs/heads/main.zip",
+  "manifest": "https://github.com/DaavyC/dchat/releases/latest/download/module.json",
+  "download": "https://github.com/DaavyC/dchat/releases/download/1.4.4/module.zip",
   "compatibility": {
     "minimum": "14",
     "verified": "14",
     "maximum": "14"
   },
   "esmodules": [
-    "scripts/js/core.js",
-    "scripts/js/data/traits.js",
-    "scripts/js/features.js",
-    "scripts/js/data/ui.js",
-    "scripts/main.mjs"
+    "main.js"
   ],
   "styles": [
-    "styles/main/toolbar.css",
-    "styles/main/settings.css",
-    "styles/main/tabs.css",
-    "styles/main/message-filters.css",
-    "styles/main/cleaner-chat.css",
-    "styles/main/traits.css",
-    "styles/main/formula.css",
-    "styles/main/compact-chat.css",
-    "styles/main/whisper-autocomplete.css",
-    "styles/main/damage-buttons.css"
+    "styles/toolbar.css",
+    "styles/settings.css",
+    "styles/tabs.css",
+    "styles/message-filters.css",
+    "styles/cleaner-chat.css",
+    "styles/traits.css",
+    "styles/formula.css",
+    "styles/compact-chat.css",
+    "styles/whisper-autocomplete.css",
+    "styles/damage-buttons.css"
   ],
   "languages": [
     {
       "lang": "en",
       "name": "English",
-      "path": "languages/en.json"
+      "path": "lang/en.json"
     }
   ],
-  "media": []
+  "flags": {}
 }

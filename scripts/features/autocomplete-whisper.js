@@ -1,7 +1,7 @@
-import { MODULE_ID, createAbortController, getChatSection, getElement } from "../core.js";
-import { registerBooleanSetting } from "./settings.js";
-import { replaceEditorRange } from "./whisper-autocomplete/editor.js";
-import { getEditorText, getMatchState } from "./whisper-autocomplete/match.js";
+import { createAbortController, getChatSection, getDocument, getElement } from "../core.js";
+import { isSettingEnabled, registerBooleanSetting } from "./settings.js";
+import { replaceEditorRange } from "./autocomplete-whisper/editor.js";
+import { getEditorText, getMatchState } from "./autocomplete-whisper/match.js";
 import {
     clearEditableState,
     createPopup,
@@ -11,8 +11,8 @@ import {
     resolveEditable,
     resolveEditor,
     resolveHost
-} from "./whisper-autocomplete/popup.js";
-import { getSuggestions, normalizeName } from "./whisper-autocomplete/suggestions.js";
+} from "./autocomplete-whisper/popup.js";
+import { getSuggestions, normalizeName } from "./autocomplete-whisper/suggestions.js";
 
 export class AutocompleteWhisper {
     static HOST_SELECTOR = "#chat-notifications, #chat-form, form.chat-form";
@@ -33,35 +33,31 @@ export class AutocompleteWhisper {
         this._scheduleStartupRefreshes();
         this._startBootstrapWatcher();
         this._bindGlobalFocusListener();
+    }
 
-        Hooks.once("ready", () => {
-            this._bindGlobalFocusListener();
-            this._scheduleStartupRefreshes();
-        });
+    static onReady() {
+        this._bindGlobalFocusListener();
+        this._scheduleStartupRefreshes();
+    }
 
-        Hooks.on("renderChatInput", (app, elements) => {
-            this.refresh(app?.element, elements);
-        });
+    static onRenderChatInput(app, elements) {
+        this.refresh(app?.element, elements);
+    }
 
-        Hooks.on("renderChatLog", (app, html) => {
-            this.refresh(getElement(html));
-        });
+    static onRenderChatLog(html) {
+        this.refresh(getElement(html));
+    }
 
-        Hooks.on("renderSidebar", (app, html) => {
-            this.refresh(getChatSection(html));
-        });
+    static onRenderSidebar(html) {
+        this.refresh(getChatSection(html));
+    }
 
-        Hooks.on("changeSidebarTab", (app) => {
-            if (app?.tabName === "chat") this.refresh(app?.element);
-        });
+    static onChangeSidebarTab(app) {
+        if (app?.tabName === "chat") this.refresh(app?.element);
+    }
 
-        Hooks.on("openDetachedWindow", () => {
-            this._scheduleStartupRefreshes();
-        });
-
-        Hooks.on("closeDetachedWindow", () => {
-            this._scheduleStartupRefreshes();
-        });
+    static onDetachedWindowChange() {
+        this._scheduleStartupRefreshes();
     }
 
     static _scheduleRefresh() {
@@ -149,34 +145,56 @@ export class AutocompleteWhisper {
         if (!host) return false;
 
         this._trackedHosts.add(host);
-        this._bindFocusListener(host.ownerDocument ?? globalThis.document);
+        this._bindFocusListener(getDocument(host));
 
-        if (!game.settings.get(MODULE_ID, "autocompleteWhisper")) {
+        if (!isSettingEnabled("autocompleteWhisper")) {
             this._teardown(host);
             return false;
         }
 
         const editor = this._resolveEditor(host);
         const editable = this._resolveEditable(editor);
-        if (!editor || !editable) {
-            this._teardown(host);
-            return false;
-        }
+        if (!this._canAttach(host, editor, editable)) return false;
 
         if (this._states.has(host)) {
-            const state = this._states.get(host);
-            if (!state?.editor?.isConnected || !state?.editable?.isConnected || state.editor !== editor || state.editable !== editable) {
-                this._teardown(host);
-            } else {
+            if (this._canReuseState(host, editor, editable)) {
                 this._updateSuggestions(host);
                 return true;
             }
+
+            this._teardown(host);
         }
 
+        const state = this._createState(host, editor, editable);
+        this._states.set(host, state);
+        host.classList.add("dchat-whisper-autocomplete-host");
+        prepareEditable(editable, state.popup.id);
+        this._bindStateEvents(state);
+
+        this._updateSuggestions(host);
+        return true;
+    }
+
+    static _canAttach(host, editor, editable) {
+        if (editor && editable) return true;
+
+        this._teardown(host);
+        return false;
+    }
+
+    static _canReuseState(host, editor, editable) {
+        const state = this._states.get(host);
+        return !!state?.editor?.isConnected
+            && !!state?.editable?.isConnected
+            && state.editor === editor
+            && state.editable === editable;
+    }
+
+    static _createState(host, editor, editable) {
         const popup = this._createPopup(host);
-        const controller = createAbortController(host);
-        const state = {
-            controller,
+
+        return {
+            controller: createAbortController(host),
             host,
             editor,
             editable,
@@ -186,13 +204,18 @@ export class AutocompleteWhisper {
             activeIndex: 0,
             match: null
         };
+    }
 
-        this._states.set(host, state);
-        host.classList.add("dchat-whisper-autocomplete-host");
-        prepareEditable(editable, popup.id);
+    static _bindStateEvents(state) {
+        const refresh = () => this._updateSuggestions(state.host);
+        this._bindEditableEvents(state, refresh);
+        this._bindEditorEvents(state, refresh);
+        this._bindPopupEvents(state);
+    }
 
+    static _bindEditableEvents(state, refresh) {
+        const { editable, host, controller } = state;
         const signal = controller.signal;
-        const refresh = () => this._updateSuggestions(host);
 
         editable.addEventListener("input", refresh, { signal });
         editable.addEventListener("click", refresh, { signal });
@@ -204,11 +227,19 @@ export class AutocompleteWhisper {
         editable.addEventListener("blur", () => {
             requestAnimationFrame(() => this._hidePopup(host));
         }, { signal });
+    }
 
-        if (editor !== editable) {
-            editor.addEventListener("input", refresh, { signal });
-            editor.addEventListener("change", refresh, { signal });
-        }
+    static _bindEditorEvents(state, refresh) {
+        const { editor, editable, controller } = state;
+        if (editor === editable) return;
+
+        editor.addEventListener("input", refresh, { signal: controller.signal });
+        editor.addEventListener("change", refresh, { signal: controller.signal });
+    }
+
+    static _bindPopupEvents(state) {
+        const { popup, host, controller } = state;
+        const signal = controller.signal;
 
         popup.addEventListener("mousedown", (event) => {
             event.preventDefault();
@@ -219,9 +250,6 @@ export class AutocompleteWhisper {
             const index = Number(option.dataset.dchatWhisperIndex);
             this._applySuggestion(host, index, { persist: event.shiftKey });
         }, { signal });
-
-        this._updateSuggestions(host);
-        return true;
     }
 
     static _resolveHost(root) {

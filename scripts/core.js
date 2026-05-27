@@ -42,6 +42,16 @@ export function getElement(html) {
     return null;
 }
 
+// Gets the document for an element.
+export function getDocument(element = null) {
+    return element?.ownerDocument ?? globalThis.document;
+}
+
+// Checks if the current user authored a message.
+export function isCurrentUserAuthor(message) {
+    return message?.author?.id === game.user?.id;
+}
+
 // Gets the chat section from rendered HTML.
 export function getChatSection(html) {
     const element = getElement(html);
@@ -149,16 +159,14 @@ export function executeCleanup(element) {
     cleanupEntries.delete(element);
 }
 
-// Registers cleanup for deleted messages.
-export function registerMessageCleanupHook() {
-    Hooks.on("deleteChatMessage", (message) => {
-        const tracked = getTrackedMessageElements(message.id);
-        if (!tracked) return;
+// Cleans tracked elements for a deleted message.
+export function cleanupDeletedMessage(message) {
+    const tracked = getTrackedMessageElements(message.id);
+    if (!tracked) return;
 
-        for (const messageEl of tracked) {
-            executeCleanup(messageEl);
-        }
+    for (const messageEl of tracked) {
+        executeCleanup(messageEl);
+    }
 
-        messageElements.delete(message.id);
-    });
+    messageElements.delete(message.id);
 }

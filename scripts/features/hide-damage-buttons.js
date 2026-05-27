@@ -1,4 +1,4 @@
-import { getElement, registerCleanup } from "../core.js";
+import { getDocument, getElement, isCurrentUserAuthor, registerCleanup } from "../core.js";
 import { registerBooleanSetting } from "./settings.js";
 
 export class HideDamageButtons {
@@ -25,7 +25,7 @@ export class HideDamageButtons {
         if (!damageButtons.length) return;
 
         const metadata = el.querySelector(".message-metadata");
-        const canToggle = message?.author?.id === game.user?.id || !!game.user?.isGM;
+        const canToggle = isCurrentUserAuthor(message) || !!game.user?.isGM;
         this._setButtonsHidden(damageButtons, true);
 
         const signal = registerCleanup(el, () => {
@@ -62,7 +62,7 @@ export class HideDamageButtons {
     static addToggleIcon(metadata, damageButtons, signal) {
         if (metadata.querySelector(this.TOGGLE_SELECTOR)) return;
 
-        const doc = metadata.ownerDocument ?? globalThis.document;
+        const doc = getDocument(metadata);
         const toggleIcon = doc.createElement("a");
         toggleIcon.className = this.TOGGLE_CLASS;
         toggleIcon.setAttribute("aria-label", game.i18n.localize("DCHAT.HideDamageButtons.ToggleLabel"));

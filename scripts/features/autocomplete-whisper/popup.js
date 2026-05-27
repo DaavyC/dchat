@@ -1,3 +1,4 @@
+import { getDocument } from "../../core.js";
 import { randomId, removeAttributes } from "../settings.js";
 
 export const EDITABLE_ARIA_ATTRIBUTES = [
@@ -32,7 +33,7 @@ export function createPopup(host) {
     const existing = host.querySelector(".dchat-whisper-autocomplete");
     if (existing) return existing;
 
-    const doc = host.ownerDocument ?? globalThis.document;
+    const doc = getDocument(host);
     const popup = doc.createElement("div");
     popup.className = "dchat-whisper-autocomplete";
     popup.id = `dchat-whisper-${randomId()}`;
@@ -54,7 +55,7 @@ export function clearEditableState(editable) {
 }
 
 export function renderPopup(state) {
-    const doc = state.popup.ownerDocument ?? globalThis.document;
+    const doc = getDocument(state.popup);
     const options = state.suggestions.map((suggestion, index) => createSuggestionOption(doc, state, suggestion, index));
     state.popup.replaceChildren(...options);
     state.popup.hidden = false;

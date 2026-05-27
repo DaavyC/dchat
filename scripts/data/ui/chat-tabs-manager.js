@@ -1,6 +1,5 @@
-import { MessageClassifier, getElement } from "../../core.js";
+import { MessageClassifier, getDocument, getElement } from "../../core.js";
 import { ChatLogManager } from "./chat-log-manager.js";
-import { registerChatRefreshHooks } from "./refresh-hooks.js";
 
 export class ChatTabsManager {
     static TAB_CONFIG = [
@@ -25,15 +24,11 @@ export class ChatTabsManager {
         return this._localizedLabels;
     }
 
-    static init() {
-        Hooks.once("i18nInit", () => {
-            ChatTabsManager._localizedLabels = null;
-        });
-
-        registerChatRefreshHooks(this);
+    static resetLocalizedLabels() {
+        this._localizedLabels = null;
     }
 
-    static _scheduleRefresh(element = null) {
+    static scheduleRefresh(element = null) {
         requestAnimationFrame(() => this.refresh(element));
     }
 
@@ -93,7 +88,7 @@ export class ChatTabsManager {
         if (!toolbar) return;
 
         toolbar.querySelectorAll(".dchat-tab-bar").forEach(tabBar => tabBar.remove());
-        toolbar.prepend(this._buildTabBar(element.ownerDocument ?? globalThis.document));
+        toolbar.prepend(this._buildTabBar(getDocument(element)));
         this._applyFilterClass(element, messageLog, this.activeTab);
         this.classifyExistingMessages(element);
         this._bindTabBar(element);
@@ -152,7 +147,7 @@ export class ChatTabsManager {
             ?? element.querySelector(".dchat-module-toolbar");
         if (existing) return existing;
 
-        const toolbar = (element.ownerDocument ?? globalThis.document).createElement("div");
+        const toolbar = getDocument(element).createElement("div");
         toolbar.className = "dchat-module-toolbar";
         return toolbar;
     }
@@ -205,7 +200,7 @@ export class ChatTabsManager {
     static _ensurePip(button) {
         if (button.querySelector(".dchat-pip")) return;
 
-        const pip = (button.ownerDocument ?? globalThis.document).createElement("span");
+        const pip = getDocument(button).createElement("span");
         pip.className = "dchat-pip";
         button.appendChild(pip);
     }

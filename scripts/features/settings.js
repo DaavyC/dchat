@@ -11,6 +11,11 @@ export function registerBooleanSetting(key, options) {
     });
 }
 
+// Checks if a module setting is enabled.
+export function isSettingEnabled(key) {
+    return game.settings.get(MODULE_ID, key);
+}
+
 // Gets Foundry utility helpers.
 export function getFoundryUtils() {
     return globalThis.foundry?.utils ?? {};
