@@ -1,13 +1,9 @@
-export const MODULE_ID = "dchat";
+import { error, isHookDebugEnabled } from "./debug.js";
+import { CHAT_SELECTORS, MESSAGE_TYPES } from "./config.js";
 
 export class MessageClassifier {
-    static TABS = {
-        CHAT: "chat",
-        GAME: "game",
-        WHISPER: "whisper",
-    };
+    static TABS = MESSAGE_TYPES;
 
-    // Classifies a chat message by tab type.
     static classify(message = {}) {
         const flags = message.flags?.pf2e ?? {};
 
@@ -29,52 +25,68 @@ export class MessageClassifier {
     }
 }
 
-// Checks if a value is a DOM element.
-function isElement(value) {
-    return !!value && typeof value === "object" && value.nodeType === 1 && typeof value.querySelector === "function";
+function isElement(candidateElement) {
+    return !!candidateElement
+        && typeof candidateElement === "object"
+        && candidateElement.nodeType === 1
+        && typeof candidateElement.querySelector === "function";
 }
 
-// Converts Foundry HTML wrappers to an element.
-export function getElement(html) {
-    if (!html) return null;
-    if (isElement(html)) return html;
-    if (isElement(html[0])) return html[0];
+export function getElement(renderedHtml) {
+    if (!renderedHtml) return null;
+    if (isElement(renderedHtml)) return renderedHtml;
+    if (isElement(renderedHtml[0])) return renderedHtml[0];
     return null;
 }
 
-// Gets the document for an element.
 export function getDocument(element = null) {
     return element?.ownerDocument ?? globalThis.document;
 }
 
-// Checks if the current user authored a message.
 export function isCurrentUserAuthor(message) {
     return message?.author?.id === game.user?.id;
 }
 
-// Gets the chat section from rendered HTML.
-export function getChatSection(html) {
-    const element = getElement(html);
+export function getChatSection(renderedHtml) {
+    const element = getElement(renderedHtml);
     if (!element) return null;
-    if (element.matches?.("#chat, [data-tab='chat']")) return element;
-    return element.querySelector("#chat, [data-tab='chat']");
+    if (element.matches?.(CHAT_SELECTORS.SECTION)) return element;
+    return element.querySelector(CHAT_SELECTORS.SECTION);
+}
+
+export function getFoundryUtils() {
+    return globalThis.foundry?.utils ?? {};
+}
+
+export function getProperty(sourceObject, path) {
+    const foundryGetProperty = getFoundryUtils().getProperty;
+    if (typeof foundryGetProperty === "function") return foundryGetProperty(sourceObject, path);
+
+    return path.split(".").reduce((currentValue, key) => currentValue?.[key], sourceObject);
+}
+
+export function expandObject(flattenedData) {
+    const foundryExpandObject = getFoundryUtils().expandObject;
+    return typeof foundryExpandObject === "function" ? foundryExpandObject(flattenedData) : flattenedData;
+}
+
+export function randomId() {
+    const foundryRandomId = getFoundryUtils().randomID;
+    return typeof foundryRandomId === "function" ? foundryRandomId() : Math.random().toString(36).slice(2);
+}
+
+export function removeAttributes(element, ...attributes) {
+    attributes.forEach(attribute => element?.removeAttribute(attribute));
 }
 
 const cleanupEntries = new WeakMap();
 const messageElements = new Map();
 
-// Checks if hook debug logging is enabled.
-export function isHookDebugEnabled() {
-    return !!globalThis.CONFIG?.debug?.hooks;
-}
-
-// Creates an abort controller for an element.
 export function createAbortController(element) {
     const AbortControllerCtor = element?.ownerDocument?.defaultView?.AbortController ?? globalThis.AbortController;
     return new AbortControllerCtor();
 }
 
-// Gets cleanup state for an element.
 function getCleanupEntry(element) {
     let entry = cleanupEntries.get(element);
     if (!entry) {
@@ -87,7 +99,6 @@ function getCleanupEntry(element) {
     return entry;
 }
 
-// Gets connected elements for a message.
 function getTrackedMessageElements(messageId) {
     const tracked = messageElements.get(messageId);
     if (!tracked) return null;
@@ -104,9 +115,8 @@ function getTrackedMessageElements(messageId) {
     return tracked;
 }
 
-// Tracks an element for a chat message.
-export function rememberMessageElement(message, html) {
-    const element = getElement(html);
+export function rememberMessageElement(message, renderedHtml) {
+    const element = getElement(renderedHtml);
     const messageId = message?.id ?? message;
     if (!element || !messageId) return element;
 
@@ -117,12 +127,10 @@ export function rememberMessageElement(message, html) {
     return element;
 }
 
-// Gets the cleanup controller for an element.
 export function getController(element) {
     return getCleanupEntry(element).abortController;
 }
 
-// Aborts cleanup state for an element.
 export function abortController(element) {
     const entry = cleanupEntries.get(element);
     if (entry) {
@@ -131,7 +139,6 @@ export function abortController(element) {
     }
 }
 
-// Registers cleanup for an element.
 export function registerCleanup(element, cleanupFn) {
     const entry = getCleanupEntry(element);
     entry.cleanups.push(cleanupFn);
@@ -139,7 +146,6 @@ export function registerCleanup(element, cleanupFn) {
     return entry.abortController.signal;
 }
 
-// Executes registered cleanup for an element.
 export function executeCleanup(element) {
     const entry = cleanupEntries.get(element);
     if (!entry) return;
@@ -149,9 +155,9 @@ export function executeCleanup(element) {
     for (const cleanupFn of entry.cleanups) {
         try {
             cleanupFn();
-        } catch (err) {
+        } catch (errorValue) {
             if (isHookDebugEnabled()) {
-                console.error("DCHAT: Cleanup error:", err);
+                error("Cleanup error:", errorValue);
             }
         }
     }
@@ -159,13 +165,12 @@ export function executeCleanup(element) {
     cleanupEntries.delete(element);
 }
 
-// Cleans tracked elements for a deleted message.
 export function cleanupDeletedMessage(message) {
     const tracked = getTrackedMessageElements(message.id);
     if (!tracked) return;
 
-    for (const messageEl of tracked) {
-        executeCleanup(messageEl);
+    for (const messageElement of tracked) {
+        executeCleanup(messageElement);
     }
 
     messageElements.delete(message.id);

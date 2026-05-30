@@ -1,25 +1,17 @@
-import { expandObject, getProperty, isSettingEnabled, registerBooleanSetting } from "./settings.js";
+import { SETTING_KEYS } from "../config.js";
+import { expandObject, getProperty } from "../utils.js";
+import { isSettingEnabled } from "../settings.js";
 
 export class HideChatInitiative {
-    // Registers the initiative hiding setting.
-    static init() {
-        registerBooleanSetting("hideChatInitiative", {
-            name: "DCHAT.Settings.hideChatInitiative.Name",
-            hint: "DCHAT.Settings.hideChatInitiative.Hint",
-            scope: "world"
-        });
-    }
+    static preCreateChatMessage(message, creationData) {
+        if (!isSettingEnabled(SETTING_KEYS.HIDE_CHAT_INITIATIVE)) return;
 
-    static preCreateChatMessage(message, data) {
-        if (!isSettingEnabled("hideChatInitiative")) return;
-
-        const source = data ? expandObject(data) : message.toObject();
-        if (!this.isInitiativeMessage(source)) return;
+        const messageData = creationData ? expandObject(creationData) : message.toObject();
+        if (!this.isInitiativeMessage(messageData)) return;
 
         return false;
     }
 
-    // Checks if a chat message is an initiative roll.
     static isInitiativeMessage(messageData) {
         return getProperty(messageData, "flags.core.initiativeRoll") === true;
     }

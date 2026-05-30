@@ -1,24 +1,14 @@
-import { getElement, isCurrentUserAuthor } from "../core.js";
-import { isSettingEnabled, registerBooleanSetting } from "./settings.js";
+import { PRIVATE_MESSAGE_DATA, SETTING_KEYS } from "../config.js";
+import { getElement, isCurrentUserAuthor } from "../utils.js";
+import { isSettingEnabled } from "../settings.js";
 
 export class HidePrivateMessages {
     static _notifyPatched = false;
-
-    // Registers private message hiding.
-    static init() {
-        registerBooleanSetting("hidePrivateMessages", {
-            name: "DCHAT.Settings.HidePrivateMessages.Name",
-            hint: "DCHAT.Settings.HidePrivateMessages.Hint",
-            scope: "world",
-            restricted: true,
-        });
-    }
 
     static onReady() {
         this._patchChatLogNotify();
     }
 
-    // Patches chat notifications for hidden private rolls.
     static _patchChatLogNotify() {
         if (this._notifyPatched) return;
 
@@ -28,19 +18,17 @@ export class HidePrivateMessages {
 
         const self = this;
         ChatLog.prototype.notify = function (message, options) {
-            if (isSettingEnabled("hidePrivateMessages") && self.shouldHideMessage(message)) return;
+            if (isSettingEnabled(SETTING_KEYS.HIDE_PRIVATE_MESSAGES) && self.shouldHideMessage(message)) return;
             return originalNotify.call(this, message, options);
         };
 
         this._notifyPatched = true;
     }
 
-    // Checks if the current user authored a message.
     static isAuthor(message) {
         return isCurrentUserAuthor(message);
     }
 
-    // Checks if a private roll should be hidden.
     static shouldHideMessage(message) {
         if (!message) return false;
 
@@ -48,13 +36,12 @@ export class HidePrivateMessages {
         return isPrivateRoll && !this.isAuthor(message) && message.isContentVisible === false;
     }
 
-    // Hides private roll markup.
-    static processMessage(message, html) {
-        const el = getElement(html);
-        if (!el || !this.shouldHideMessage(message)) return;
+    static processMessage(message, renderedHtml) {
+        const messageElement = getElement(renderedHtml);
+        if (!messageElement || !this.shouldHideMessage(message)) return;
 
-        el.hidden = true;
-        el.setAttribute("aria-hidden", "true");
-        el.dataset.dchatPrivateHidden = "true";
+        messageElement.hidden = true;
+        messageElement.setAttribute("aria-hidden", "true");
+        messageElement.dataset[PRIVATE_MESSAGE_DATA.HIDDEN] = "true";
     }
 }

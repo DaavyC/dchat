@@ -21,7 +21,7 @@
     "maximum": "14"
   },
   "esmodules": [
-    "main.js"
+    "init.js"
   ],
   "styles": [
     "styles/toolbar.css",

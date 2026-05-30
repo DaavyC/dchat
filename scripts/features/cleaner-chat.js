@@ -1,26 +1,43 @@
-import { getElement } from "../core.js";
-import { registerBooleanSetting } from "./settings.js";
+import { CLEANER_CHAT_CLASSES, CLEANER_CHAT_SELECTORS } from "../config.js";
+import { getElement, registerCleanup } from "../utils.js";
 
 export class CleanerChat {
-    static SELECTORS = {
-        AVATARS: "header img, .message-header img, .message-portrait, [class*='portrait']",
-        USERS: "header span.user, .message-header span.user"
-    };
+    static processMessage(message, renderedHtml) {
+        const messageElement = getElement(renderedHtml);
+        if (!messageElement) return;
 
-    // Registers the cleaner chat setting.
-    static init() {
-        registerBooleanSetting("cleanerChat", {
-            name: "DCHAT.Settings.cleanerChat.Name",
-            hint: "DCHAT.Settings.cleanerChat.Hint"
+        messageElement.querySelectorAll(CLEANER_CHAT_SELECTORS.AVATARS).forEach(avatarElement => avatarElement.style.display = "none");
+        messageElement.querySelectorAll(CLEANER_CHAT_SELECTORS.USERS).forEach(userElement => userElement.style.display = "none");
+    }
+}
+
+export class CollapsibleFormula {
+    static processMessage(message, renderedHtml) {
+        const messageElement = getElement(renderedHtml);
+        if (!messageElement) return;
+
+        const signal = registerCleanup(messageElement, () => {
+            messageElement.querySelectorAll(CLEANER_CHAT_SELECTORS.ROLL_TITLE).forEach(title => {
+                title.style.cursor = "";
+                title.style.userSelect = "";
+                title.onclick = null;
+            });
+        });
+
+        messageElement.querySelectorAll(CLEANER_CHAT_SELECTORS.ROLL).forEach(roll => {
+            const title = roll.querySelector(CLEANER_CHAT_SELECTORS.ROLL_TITLE);
+            const formula = roll.querySelector(CLEANER_CHAT_SELECTORS.FORMULA);
+            if (title && formula) {
+                title.style.cursor = "pointer";
+                title.style.userSelect = "none";
+                title.addEventListener("click", (event) => {
+                    event.stopPropagation();
+                    formula.classList.toggle(CLEANER_CHAT_CLASSES.SHOW_FORMULA);
+                }, { signal });
+            }
         });
     }
+}
 
-    // Hides chat avatars and user labels.
-    static processMessage(message, html) {
-        const el = getElement(html);
-        if (!el) return;
-
-        el.querySelectorAll(this.SELECTORS.AVATARS).forEach(t => t.style.display = "none");
-        el.querySelectorAll(this.SELECTORS.USERS).forEach(t => t.style.display = "none");
-    }
+export class CompactChat {
 }

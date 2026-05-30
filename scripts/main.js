@@ -1,0 +1,410 @@
+import {
+    CHAT_BATCH_SIZE,
+    CHAT_CLASSES,
+    CHAT_DATA,
+    CHAT_I18N,
+    CHAT_SELECTOR_FACTORIES,
+    CHAT_SELECTORS,
+    CHAT_TAB_CONFIG,
+    FEATURE_CLASSES,
+    SETTING_KEYS
+} from "./config.js";
+import { SettingsManager, isSettingEnabled, registerModuleSettings } from "./settings.js";
+import { MessageClassifier, cleanupDeletedMessage, getDocument, getElement, rememberMessageElement } from "./utils.js";
+import { AutocompleteWhisper } from "./features/autocomplete-whisper.js";
+import { CleanerChat, CollapsibleFormula, CompactChat } from "./features/cleaner-chat.js";
+import { HideChatInitiative } from "./features/hide-chat-initiative.js";
+import { HidePrivateMessages } from "./features/hide-private-messages.js";
+import { HideDamageButtons, HideDamageTraits, TraitFilter } from "./features/pf2e-only.js";
+
+export class ChatLogManager {
+    static _observers = new WeakMap();
+
+    static observeChatLog(renderedHtml) {
+        this._observeAndReplace(getElement(renderedHtml));
+    }
+
+    static scheduleRefresh(element = null) {
+        requestAnimationFrame(() => this.refresh(element));
+    }
+
+    static refresh(element = null) {
+        const container = getElement(element);
+        if (container) {
+            this.injectClearButton(container);
+            return;
+        }
+
+        ChatTabsManager._getTrackedContainers().forEach(trackedContainer => {
+            this.injectClearButton(trackedContainer);
+        });
+    }
+
+    static _observeAndReplace(element) {
+        if (!element) return;
+
+        this._observers.get(element)?.disconnect();
+        this.injectClearButton(element);
+
+        const observer = new MutationObserver(() => {
+            this.injectClearButton(element);
+        });
+
+        observer.observe(element, { childList: true, subtree: true });
+        this._observers.set(element, observer);
+    }
+
+    static _createScopedClearButton(documentRef) {
+        const button = documentRef.createElement("button");
+        button.type = "button";
+        button.className = CHAT_CLASSES.SCOPED_CLEAR;
+        button.dataset[CHAT_DATA.ACTION] = CHAT_DATA.SCOPED_CLEAR_ACTION;
+
+        const tooltip = game.i18n.localize(CHAT_I18N.CLEAR_TOOLTIP);
+        button.dataset.tooltip = tooltip;
+        button.title = tooltip;
+        button.setAttribute("aria-label", tooltip);
+
+        button.addEventListener("click", async (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            await this.scopedClearChatLog(event.shiftKey);
+        });
+
+        return button;
+    }
+
+    static injectClearButton(renderedHtml) {
+        const element = getElement(renderedHtml);
+        if (!element) return;
+
+        const toolbar = ChatTabsManager._ensureModuleToolbar(element);
+        if (!toolbar) return;
+
+        const scopedButtons = Array.from(toolbar.querySelectorAll(CHAT_SELECTORS.SCOPED_CLEAR));
+        if (!game.user?.isGM) {
+            scopedButtons.forEach(button => button.remove());
+            return;
+        }
+
+        const documentRef = getDocument(element);
+        const scopedButton = scopedButtons.shift() ?? null;
+        scopedButtons.forEach(button => button.remove());
+
+        const clearButton = scopedButton ?? this._createScopedClearButton(documentRef);
+        this._getFoundryClearButton(element)?.remove();
+
+        if (!toolbar.contains(clearButton)) {
+            toolbar.appendChild(clearButton);
+        }
+    }
+
+    static async scopedClearChatLog(clearAll = false) {
+        if (!game.user?.isGM) return;
+
+        const tabLabel = this._getClearLabel(clearAll);
+        const messages = this._getMessagesToClear(clearAll);
+
+        if (!messages.length) {
+            return ui.notifications.info(game.i18n.format(CHAT_I18N.CLEAR_NO_MESSAGES, { label: tabLabel }));
+        }
+
+        if (!await this._confirmClear(tabLabel, messages.length)) return;
+
+        const messageIds = messages.map(message => message.id);
+        await this._deleteInBatches(messageIds);
+
+        ui.notifications.info(game.i18n.format(CHAT_I18N.CLEAR_SUCCESS, { label: tabLabel, count: messageIds.length }));
+    }
+
+    static _getFoundryClearButton(element) {
+        const controls = element.querySelector(CHAT_SELECTORS.CONTROLS);
+        return controls?.querySelector(CHAT_SELECTORS.FOUNDRY_CLEAR_BUTTON)
+            ?? controls?.querySelector(CHAT_SELECTORS.FOUNDRY_CLEAR_ICON)?.closest("button")
+            ?? null;
+    }
+
+    static _getClearLabel(clearAll) {
+        if (clearAll) return game.i18n.localize(CHAT_I18N.TABS_ALL);
+
+        const currentTab = CHAT_TAB_CONFIG.find(tab => tab.id === ChatTabsManager.activeTab);
+        return game.i18n.localize(currentTab?.label ?? CHAT_I18N.TABS_CHAT);
+    }
+
+    static _getMessagesToClear(clearAll) {
+        if (clearAll) return game.messages.contents;
+        return game.messages.filter(message => MessageClassifier.classify(message) === ChatTabsManager.activeTab);
+    }
+
+    static _confirmClear(tabLabel, count) {
+        return foundry.applications.api.DialogV2.confirm({
+            window: { title: game.i18n.format(CHAT_I18N.CLEAR_TITLE, { label: tabLabel }) },
+            content: `<p>${game.i18n.format(CHAT_I18N.CLEAR_CONFIRM, { count, label: tabLabel })}</p>`,
+            yes: { default: true },
+            no: { default: false },
+        });
+    }
+
+    static async _deleteInBatches(messageIds) {
+        for (let batchStartIndex = 0; batchStartIndex < messageIds.length; batchStartIndex += CHAT_BATCH_SIZE) {
+            await ChatMessage.deleteDocuments(messageIds.slice(batchStartIndex, batchStartIndex + CHAT_BATCH_SIZE));
+        }
+    }
+}
+
+export class ChatTabsManager {
+    static _localizedLabels = null;
+    static _chatContainers = new Set();
+    static activeTab = MessageClassifier.TABS.CHAT;
+    static unreadTabs = new Set();
+
+    static getLocalizedLabels() {
+        if (!this._localizedLabels) {
+            this._localizedLabels = CHAT_TAB_CONFIG.map(tab => ({
+                id: tab.id,
+                icon: tab.icon,
+                label: game.i18n.localize(tab.label)
+            }));
+        }
+        return this._localizedLabels;
+    }
+
+    static resetLocalizedLabels() {
+        this._localizedLabels = null;
+    }
+
+    static scheduleRefresh(element = null) {
+        requestAnimationFrame(() => this.refresh(element));
+    }
+
+    static _pruneContainers() {
+        for (const element of Array.from(this._chatContainers)) {
+            if (!element?.isConnected) this._chatContainers.delete(element);
+        }
+    }
+
+    static _trackContainer(element) {
+        if (!element) return;
+        this._pruneContainers();
+        this._chatContainers.add(element);
+    }
+
+    static _getTrackedContainers() {
+        this._pruneContainers();
+        return Array.from(this._chatContainers);
+    }
+
+    static refresh(element = null) {
+        const container = getElement(element);
+        if (container) {
+            this.inject(container);
+            return;
+        }
+
+        for (const trackedContainer of this._getTrackedContainers()) {
+            this.inject(trackedContainer);
+        }
+    }
+
+    static _ensureModuleToolbar(element) {
+        const messageLog = this._getMessageList(element);
+        if (!messageLog) return null;
+
+        const anchor = this._getToolbarAnchor(element, messageLog);
+        const targetParent = anchor?.parentElement;
+        if (!targetParent) return null;
+
+        const toolbar = this._getOrCreateToolbar(element);
+        if (toolbar.parentElement !== targetParent || toolbar.nextElementSibling !== anchor) {
+            targetParent.insertBefore(toolbar, anchor);
+        }
+
+        return toolbar;
+    }
+
+    static inject(element) {
+        if (!element) return;
+        this._trackContainer(element);
+
+        const messageLog = this._getMessageList(element);
+        if (!messageLog) return;
+
+        const toolbar = this._ensureModuleToolbar(element);
+        if (!toolbar) return;
+
+        toolbar.querySelectorAll(".dchat-tab-bar").forEach(tabBar => tabBar.remove());
+        toolbar.prepend(this._buildTabBar(getDocument(element)));
+        this._applyFilterClass(element, messageLog, this.activeTab);
+        this.classifyExistingMessages(element);
+        this._bindTabBar(element);
+
+        ChatLogManager.refresh(element);
+    }
+
+    static switch(tabId) {
+        if (this.activeTab === tabId) return;
+
+        this.activeTab = tabId;
+        this.unreadTabs.delete(tabId);
+
+        for (const container of this._getTrackedContainers()) {
+            const messageList = this._getMessageList(container);
+            if (!messageList) continue;
+
+            this._applyFilterClass(container, messageList, tabId);
+            this._syncTabButtons(container, tabId);
+            this._scrollToBottom(messageList);
+        }
+    }
+
+    static addNotification(tabId) {
+        if (tabId === this.activeTab) return;
+        this.unreadTabs.add(tabId);
+
+        for (const container of this._getTrackedContainers()) {
+            container.querySelectorAll(CHAT_SELECTOR_FACTORIES.TAB_BUTTON_BY_ID(tabId)).forEach(button => {
+                this._ensurePip(button);
+            });
+        }
+    }
+
+    static classifyExistingMessages(container) {
+        container.querySelectorAll(CHAT_SELECTORS.MESSAGE_ID).forEach(messageElement => {
+            const message = game.messages.get(messageElement.dataset.messageId);
+            if (message) {
+                messageElement.setAttribute(`data-${CHAT_DATA.TYPE}`, MessageClassifier.classify(message));
+            }
+        });
+    }
+
+    static _getMessageList(container) {
+        return container.querySelector(CHAT_SELECTORS.MESSAGE_LIST);
+    }
+
+    static _getToolbarAnchor(element, messageLog) {
+        return element.querySelector(CHAT_SELECTORS.CONTROLS)
+            ?? element.querySelector(CHAT_SELECTORS.FORM)
+            ?? messageLog;
+    }
+
+    static _getOrCreateToolbar(element) {
+        const existing = element.querySelector(`:scope > .${CHAT_CLASSES.MODULE_TOOLBAR}`)
+            ?? element.querySelector(`.${CHAT_CLASSES.MODULE_TOOLBAR}`);
+        if (existing) return existing;
+
+        const toolbar = getDocument(element).createElement("div");
+        toolbar.className = CHAT_CLASSES.MODULE_TOOLBAR;
+        return toolbar;
+    }
+
+    static _buildTabBar(documentRef) {
+        const tabBar = documentRef.createElement("div");
+        tabBar.className = CHAT_CLASSES.TAB_BAR;
+        tabBar.append(...this.getLocalizedLabels().map(tabConfig => this._buildTabButton(documentRef, tabConfig)));
+        return tabBar;
+    }
+
+    static _buildTabButton(documentRef, tabConfig) {
+        const isActive = tabConfig.id === this.activeTab;
+        const button = documentRef.createElement("button");
+        button.type = "button";
+        button.className = `ui-control icon fas ${tabConfig.icon} ${CHAT_CLASSES.TAB_BUTTON}${isActive ? ` ${CHAT_CLASSES.ACTIVE}` : ""}`;
+        button.dataset[CHAT_DATA.TAB] = tabConfig.id;
+        button.dataset.tooltip = tabConfig.label;
+        button.setAttribute("aria-label", tabConfig.label);
+        button.setAttribute("aria-pressed", String(isActive));
+
+        if (this.unreadTabs.has(tab.id)) this._ensurePip(button);
+        return button;
+    }
+
+    static _bindTabBar(element) {
+        element.querySelector(CHAT_SELECTORS.TAB_BAR)?.addEventListener("click", (event) => {
+            const button = event.target.closest(CHAT_SELECTORS.TAB_DATA);
+            if (button) this.switch(button.dataset[CHAT_DATA.TAB]);
+        });
+    }
+
+    static _applyFilterClass(container, messageList, tabId) {
+        const filterClasses = Object.values(MessageClassifier.TABS).map(tab => `${CHAT_CLASSES.FILTER_PREFIX}-${tab}`);
+        for (const element of [container, messageList]) {
+            element.classList.remove(...filterClasses);
+            element.classList.add(`${CHAT_CLASSES.FILTER_PREFIX}-${tabId}`);
+        }
+    }
+
+    static _syncTabButtons(container, tabId) {
+        container.querySelectorAll(CHAT_SELECTORS.TAB_BUTTON).forEach((button) => {
+            const isActive = button.dataset[CHAT_DATA.TAB] === tabId;
+            button.classList.toggle(CHAT_CLASSES.ACTIVE, isActive);
+            button.setAttribute("aria-pressed", String(isActive));
+            if (isActive) button.querySelector(CHAT_SELECTORS.PIP)?.remove();
+        });
+    }
+
+    static _ensurePip(button) {
+        if (button.querySelector(CHAT_SELECTORS.PIP)) return;
+
+        const pip = getDocument(button).createElement("span");
+        pip.className = CHAT_CLASSES.PIP;
+        button.appendChild(pip);
+    }
+
+    static _scrollToBottom(messageList) {
+        requestAnimationFrame(() => {
+            messageList.scrollTop = messageList.scrollHeight;
+        });
+    }
+}
+
+export const FEATURES = [
+    { class: CleanerChat, setting: SETTING_KEYS.CLEANER_CHAT, css: FEATURE_CLASSES.CLEANER_CHAT },
+    { class: HideDamageTraits, setting: SETTING_KEYS.HIDE_DAMAGE_TRAITS, css: FEATURE_CLASSES.HIDE_DAMAGE_TRAITS },
+    { class: TraitFilter, setting: SETTING_KEYS.TRAIT_FILTER, css: FEATURE_CLASSES.TRAIT_FILTER },
+    { class: CollapsibleFormula, setting: SETTING_KEYS.COLLAPSIBLE_FORMULA, css: FEATURE_CLASSES.COLLAPSIBLE_FORMULA },
+    { class: CompactChat, setting: SETTING_KEYS.COMPACT_CHAT, css: FEATURE_CLASSES.COMPACT_CHAT },
+    { class: AutocompleteWhisper, setting: SETTING_KEYS.AUTOCOMPLETE_WHISPER },
+    { class: HideChatInitiative, setting: SETTING_KEYS.HIDE_CHAT_INITIATIVE },
+    { class: HidePrivateMessages, setting: SETTING_KEYS.HIDE_PRIVATE_MESSAGES },
+    { class: HideDamageButtons, setting: SETTING_KEYS.HIDE_DAMAGE_BUTTONS }
+];
+
+export { AutocompleteWhisper, ChatLogManager, ChatTabsManager, HideChatInitiative, HidePrivateMessages, MessageClassifier, SettingsManager };
+
+export function initializeFeatures() {
+    registerModuleSettings();
+    FEATURES.forEach(feature => feature.class.init?.());
+}
+
+export function processFeatures(message, renderedHtml) {
+    const element = rememberMessageElement(message, renderedHtml);
+    if (!element) return;
+
+    element.setAttribute(`data-${CHAT_DATA.TYPE}`, MessageClassifier.classify(message));
+
+    for (const feature of FEATURES) {
+        if (isSettingEnabled(feature.setting)) {
+            if (feature.css) element.classList.add(feature.css);
+            feature.class.processMessage?.(message, renderedHtml);
+        }
+    }
+}
+
+export function refreshChatManagers(element = null) {
+    ChatTabsManager.refresh(element);
+    ChatLogManager.refresh(element);
+}
+
+export function scheduleChatRefreshes() {
+    ChatTabsManager.scheduleRefresh();
+    ChatLogManager.scheduleRefresh();
+}
+
+export function addChatNotification(message) {
+    if (isSettingEnabled(SETTING_KEYS.HIDE_PRIVATE_MESSAGES) && HidePrivateMessages.shouldHideMessage(message)) return;
+    ChatTabsManager.addNotification(MessageClassifier.classify(message));
+}
+
+export function cleanupMessage(message) {
+    cleanupDeletedMessage(message);
+}
