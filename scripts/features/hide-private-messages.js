@@ -12,13 +12,13 @@ export class HidePrivateMessages {
     static _patchChatLogNotify() {
         if (this._notifyPatched) return;
 
-        const ChatLog = globalThis.foundry?.applications?.sidebar?.tabs?.ChatLog;
-        const originalNotify = ChatLog?.prototype?.notify;
+        const ChatLogClass = globalThis.foundry?.applications?.sidebar?.tabs?.ChatLog;
+        const originalNotify = ChatLogClass?.prototype?.notify;
         if (typeof originalNotify !== "function") return;
 
-        const self = this;
-        ChatLog.prototype.notify = function (message, options) {
-            if (isSettingEnabled(SETTING_KEYS.HIDE_PRIVATE_MESSAGES) && self.shouldHideMessage(message)) return;
+        const featureClass = this;
+        ChatLogClass.prototype.notify = function (message, options) {
+            if (isSettingEnabled(SETTING_KEYS.HIDE_PRIVATE_MESSAGES) && featureClass.shouldHideMessage(message)) return;
             return originalNotify.call(this, message, options);
         };
 

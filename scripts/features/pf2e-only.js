@@ -19,8 +19,8 @@ export class TraitFilter {
         const messageElement = getElement(renderedHtml);
         if (!messageElement) return;
 
-        const allTags = messageElement.querySelectorAll(PF2E_SELECTORS.TRAIT_TAGS);
-        for (const tag of allTags) {
+        const traitTags = messageElement.querySelectorAll(PF2E_SELECTORS.TRAIT_TAGS);
+        for (const tag of traitTags) {
             const tooltip = tag.dataset.tooltip;
             if (!tooltip) continue;
 
@@ -45,12 +45,12 @@ export class TraitFilter {
             if (container.dataset[PF2E_DATA.TRAITS_LIMITED]) return;
             container.dataset[PF2E_DATA.TRAITS_LIMITED] = "true";
 
-            const allTags = Array.from(container.querySelectorAll(PF2E_SELECTORS.VISIBLE_TRAIT_TAGS))
+            const visibleTraitTags = Array.from(container.querySelectorAll(PF2E_SELECTORS.VISIBLE_TRAIT_TAGS))
                 .filter(tag => !tag.classList.contains(PF2E_CLASSES.FILTERED_TRAIT));
 
-            if (allTags.length <= PF2E_LIMITS.VISIBLE_TRAITS) return;
+            if (visibleTraitTags.length <= PF2E_LIMITS.VISIBLE_TRAITS) return;
 
-            allTags.forEach((tag, index) => {
+            visibleTraitTags.forEach((tag, index) => {
                 tag.classList.add(PF2E_CLASSES.CLICKABLE_TRAIT);
                 if (index >= PF2E_LIMITS.VISIBLE_TRAITS) tag.classList.add(PF2E_CLASSES.HIDDEN_TRAIT);
             });
@@ -135,9 +135,9 @@ export class HideDamageButtons {
             updateIcon();
         }, { signal });
 
-        const deleteBtn = metadata.querySelector(PF2E_SELECTORS.MESSAGE_DELETE);
-        if (deleteBtn) {
-            metadata.insertBefore(toggleIcon, deleteBtn.nextSibling);
+        const deleteButton = metadata.querySelector(PF2E_SELECTORS.MESSAGE_DELETE);
+        if (deleteButton) {
+            metadata.insertBefore(toggleIcon, deleteButton.nextSibling);
         } else {
             metadata.appendChild(toggleIcon);
         }

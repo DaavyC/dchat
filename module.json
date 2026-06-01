@@ -24,16 +24,7 @@
     "init.js"
   ],
   "styles": [
-    "styles/toolbar.css",
-    "styles/settings.css",
-    "styles/tabs.css",
-    "styles/message-filters.css",
-    "styles/cleaner-chat.css",
-    "styles/traits.css",
-    "styles/formula.css",
-    "styles/compact-chat.css",
-    "styles/whisper-autocomplete.css",
-    "styles/damage-buttons.css"
+    "styles/main.css"
   ],
   "languages": [
     {
