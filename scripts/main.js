@@ -314,7 +314,7 @@ export class ChatTabsManager {
         button.setAttribute("aria-label", tabConfig.label);
         button.setAttribute("aria-pressed", String(isActive));
 
-        if (this.unreadTabs.has(tab.id)) this._ensurePip(button);
+        if (this.unreadTabs.has(tabConfig.id)) this._ensurePip(button);
         return button;
     }
 
@@ -369,7 +369,7 @@ export const FEATURES = [
     { class: HideDamageButtons, setting: SETTING_KEYS.HIDE_DAMAGE_BUTTONS }
 ];
 
-export { AutocompleteWhisper, ChatLogManager, ChatTabsManager, HideChatInitiative, HidePrivateMessages, MessageClassifier, SettingsManager };
+export { AutocompleteWhisper, HideChatInitiative, HidePrivateMessages, MessageClassifier, SettingsManager };
 
 export function initializeFeatures() {
     registerModuleSettings();
