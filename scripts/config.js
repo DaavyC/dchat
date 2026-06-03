@@ -158,6 +158,16 @@ export const SETTINGS_I18N = {
     GROUP_PREFIX: "DCHAT.Settings.Groups"
 };
 
+export const RESET_DIALOG = {
+    MENU_KEY: "resetSettings",
+    MENU_ICON: "fas fa-layer-group",
+    I18N_PREFIX: "DCHAT.Settings.Reset",
+    YES_ACTION: "yes",
+    NO_ACTION: "no",
+    YES_ICON: "fa-solid fa-check",
+    NO_ICON: "fa-solid fa-xmark"
+};
+
 export const CLEANER_CHAT_SELECTORS = {
     AVATARS: "header img, .message-header img, .message-portrait, [class*='portrait']",
     USERS: "header span.user, .message-header span.user",

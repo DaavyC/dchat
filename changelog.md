@@ -1,3 +1,6 @@
+##### 1.4.5
+- Added an option to restore default settings
+
 ##### 1.0.1 - 1.4.4
 - Bug fixes
 - Some changes that are not user-related

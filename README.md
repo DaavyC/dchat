@@ -24,6 +24,7 @@ A simple module for **Foundry VTT** that organizes the chat log into tabs and ad
 - **Autocomplete Whisper** — Shows whisper recipient suggestions while typing.
 - **Chat Cleanup** — Hide initiative messages, private rolls, and dice formulas.
 - **PF2e Options** — Hide damage traits, extra traits, and damage buttons.
+- **Reset Settings** — Restore all module settings to their defaults.
 
 ---
 

@@ -1,5 +1,6 @@
 import {
     MODULE_ID,
+    RESET_DIALOG,
     SETTING_DEFINITIONS,
     SETTING_GROUPS,
     SETTINGS_CLASSES,
@@ -58,9 +59,21 @@ export class SettingsManager {
 }
 
 export function registerModuleSettings() {
+    registerResetMenu();
+
     for (const [key, options] of Object.entries(SETTING_DEFINITIONS)) {
         registerBooleanSetting(key, options);
     }
+}
+
+function registerResetMenu() {
+    game.settings.registerMenu(MODULE_ID, RESET_DIALOG.MENU_KEY, {
+        name: `${RESET_DIALOG.I18N_PREFIX}.Name`,
+        hint: `${RESET_DIALOG.I18N_PREFIX}.Hint`,
+        icon: RESET_DIALOG.MENU_ICON,
+        type: ResetSettingsDialog,
+        restricted: true
+    });
 }
 
 function registerBooleanSetting(key, options) {
@@ -75,4 +88,65 @@ function registerBooleanSetting(key, options) {
 
 export function isSettingEnabled(key) {
     return game.settings.get(MODULE_ID, key);
+}
+
+async function resetSettingsToDefault(app) {
+    await Promise.all(Object.entries(SETTING_DEFINITIONS).map(([key, options]) => (
+        game.settings.set(MODULE_ID, key, options.default ?? false)
+    )));
+    app?.render?.(true);
+}
+
+export async function confirmResetSettings(app = game.settings.sheet) {
+    const confirmed = await showResetConfirmation();
+    if (!confirmed) return;
+
+    await resetSettingsToDefault(app);
+}
+
+export class ResetSettingsDialog extends (globalThis.FormApplication ?? class {}) {
+    constructor(...args) {
+        super(...args);
+
+        return {
+            render: () => confirmResetSettings(game.settings.sheet)
+        };
+    }
+}
+
+async function showResetConfirmation() {
+    const options = getResetDialogOptions();
+    const DialogV2 = globalThis.foundry?.applications?.api?.DialogV2;
+    if (DialogV2) return DialogV2.confirm(options);
+
+    return new Promise(resolve => {
+        globalThis.Dialog.confirm({
+            title: options.window.title,
+            content: options.content,
+            yes: () => resolve(true),
+            no: () => resolve(false),
+            defaultYes: false
+        });
+    });
+}
+
+function getResetDialogOptions() {
+    return {
+        window: { title: localizeReset("Title") },
+        content: `<p>${localizeReset("Content")}</p>`,
+        yes: {
+            action: RESET_DIALOG.YES_ACTION,
+            icon: RESET_DIALOG.YES_ICON,
+            label: localizeReset("Yes")
+        },
+        no: {
+            action: RESET_DIALOG.NO_ACTION,
+            icon: RESET_DIALOG.NO_ICON,
+            label: localizeReset("No")
+        }
+    };
+}
+
+function localizeReset(key) {
+    return game.i18n.localize(`${RESET_DIALOG.I18N_PREFIX}.Confirm.${key}`);
 }
