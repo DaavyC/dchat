@@ -48,8 +48,8 @@ export class AutocompleteWhisper {
     }
 
     static _scheduleStartupRefreshes() {
-        for (const delay of [0, 150, 500, 1200, 2500, 5000]) {
-            globalThis.setTimeout(() => this._scheduleRefresh(), delay);
+        for (const delayMs of AUTOCOMPLETE_WHISPER.STARTUP_REFRESH_DELAYS_MS) {
+            globalThis.setTimeout(() => this._scheduleRefresh(), delayMs);
         }
     }
 
@@ -59,11 +59,11 @@ export class AutocompleteWhisper {
         this._bootstrapAttempts = 0;
         this._bootstrapWatcher = globalThis.setInterval(() => {
             this._bootstrapAttempts += 1;
-            if (this.refresh() || this._bootstrapAttempts >= 20) {
+            if (this.refresh() || this._bootstrapAttempts >= AUTOCOMPLETE_WHISPER.MAX_BOOTSTRAP_ATTEMPTS) {
                 globalThis.clearInterval(this._bootstrapWatcher);
                 this._bootstrapWatcher = null;
             }
-        }, 500);
+        }, AUTOCOMPLETE_WHISPER.BOOTSTRAP_INTERVAL_MS);
     }
 
     static _bindGlobalFocusListener() {
@@ -121,7 +121,7 @@ export class AutocompleteWhisper {
     }
 
     static _attach(rootElement) {
-        const host = this._resolveHost(rootElement);
+        const host = resolveHost(rootElement, AUTOCOMPLETE_WHISPER.HOST_SELECTOR);
         if (!host) return false;
 
         this._trackedHosts.add(host);
@@ -132,8 +132,8 @@ export class AutocompleteWhisper {
             return false;
         }
 
-        const editor = this._resolveEditor(host);
-        const editable = this._resolveEditable(editor);
+        const editor = resolveEditor(host);
+        const editable = resolveEditable(editor);
         if (!this._canAttach(host, editor, editable)) return false;
 
         if (this._states.has(host)) {
@@ -171,7 +171,7 @@ export class AutocompleteWhisper {
     }
 
     static _createState(host, editor, editable) {
-        const popup = this._createPopup(host);
+        const popup = createPopup(host);
 
         return {
             controller: createAbortController(host),
@@ -179,7 +179,6 @@ export class AutocompleteWhisper {
             editor,
             editable,
             popup,
-            popupId: popup.id,
             suggestions: [],
             activeIndex: 0,
             match: null
@@ -202,7 +201,7 @@ export class AutocompleteWhisper {
         editable.addEventListener("focus", refresh, { signal });
         editable.addEventListener("keydown", (event) => this._onKeydown(host, event), { signal });
         editable.addEventListener("keyup", (event) => {
-            if (["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) refresh();
+            if (AUTOCOMPLETE_WHISPER.CARET_NAVIGATION_KEYS.includes(event.key)) refresh();
         }, { signal });
         editable.addEventListener("blur", () => {
             requestAnimationFrame(() => this._hidePopup(host));
@@ -232,22 +231,6 @@ export class AutocompleteWhisper {
         }, { signal });
     }
 
-    static _resolveHost(rootElement) {
-        return resolveHost(rootElement, AUTOCOMPLETE_WHISPER.HOST_SELECTOR);
-    }
-
-    static _resolveEditor(host) {
-        return resolveEditor(host);
-    }
-
-    static _resolveEditable(editor) {
-        return resolveEditable(editor);
-    }
-
-    static _createPopup(host) {
-        return createPopup(host);
-    }
-
     static _teardown(host) {
         const state = this._states.get(host);
         if (state) {
@@ -260,33 +243,17 @@ export class AutocompleteWhisper {
         host?.classList?.remove(AUTOCOMPLETE_WHISPER.HOST_CLASS);
     }
 
-    static _getEditorText(editable) {
-        return getEditorText(editable);
-    }
-
-    static _getMatchState(editable) {
-        return getMatchState(editable);
-    }
-
-    static _normalizeName(name) {
-        return normalizeName(name);
-    }
-
-    static _getSuggestions(match) {
-        return getSuggestions(match, game.users.contents, AUTOCOMPLETE_WHISPER.MAX_RESULTS);
-    }
-
     static _updateSuggestions(host) {
         const state = this._states.get(host);
         if (!state) return;
 
-        state.match = this._getMatchState(state.editable);
+        state.match = getMatchState(state.editable);
         if (!state.match) {
             this._hidePopup(host);
             return;
         }
 
-        state.suggestions = this._getSuggestions(state.match);
+        state.suggestions = getSuggestions(state.match, game.users.contents, AUTOCOMPLETE_WHISPER.MAX_RESULTS);
         state.activeIndex = Math.min(state.activeIndex, Math.max(state.suggestions.length - 1, 0));
 
         if (!state.suggestions.length) {
@@ -341,33 +308,29 @@ export class AutocompleteWhisper {
         if (!state) return;
 
         const suggestion = state.suggestions[index];
-        const match = state.match ?? this._getMatchState(state.editable);
+        const match = state.match ?? getMatchState(state.editable);
         if (!suggestion || !match) return;
 
-        const editorText = this._getEditorText(state.editable);
+        const editorText = getEditorText(state.editable);
         const textAfterMatch = editorText.slice(match.targetEnd);
         const selectedNames = match.selectedNames.filter(name => name.toLocaleLowerCase() !== suggestion.name.toLocaleLowerCase());
         const recipients = [...selectedNames, suggestion.name];
 
         if (persist) {
             const replacement = `[${recipients.join(", ")}, ]`;
-            this._replaceEditorRange(state, match.targetStart, match.targetEnd, replacement, replacement.length - 1);
+            replaceEditorRange(state, match.targetStart, match.targetEnd, replacement, replacement.length - 1);
             this._updateSuggestions(host);
             return;
         }
 
         const replacement = `[${recipients.join(", ")}]`;
         const spacer = /^\s/.test(textAfterMatch) ? "" : " ";
-        this._replaceEditorRange(state, match.targetStart, match.targetEnd, `${replacement}${spacer}`);
+        replaceEditorRange(state, match.targetStart, match.targetEnd, `${replacement}${spacer}`);
         this._hidePopup(host);
-    }
-
-    static _replaceEditorRange(state, startOffset, endOffset, replacement, caretOffset = replacement.length) {
-        replaceEditorRange(state, startOffset, endOffset, replacement, caretOffset);
     }
 }
 
-export function replaceEditorRange(state, startOffset, endOffset, replacement, caretOffset = replacement.length) {
+function replaceEditorRange(state, startOffset, endOffset, replacement, caretOffset = replacement.length) {
     const editable = state.editable;
     const documentRef = getDocument(editable);
     const selection = documentRef.getSelection?.();
@@ -385,7 +348,7 @@ export function replaceEditorRange(state, startOffset, endOffset, replacement, c
     restoreCaret(editable, selection, startOffset, caretOffset);
 }
 
-export function createTextRange(rootElement, start, end) {
+function createTextRange(rootElement, start, end) {
     const documentRef = getDocument(rootElement);
     const range = documentRef.createRange();
     const startPoint = locateTextBoundary(rootElement, start);
@@ -408,8 +371,8 @@ function insertText(documentRef, editable, range, replacement) {
 }
 
 function dispatchInput(editable, replacement) {
-    const View = editable.ownerDocument?.defaultView;
-    const InputEventCtor = View?.InputEvent ?? View?.Event ?? Event;
+    const documentWindow = editable.ownerDocument?.defaultView;
+    const InputEventCtor = documentWindow?.InputEvent ?? documentWindow?.Event ?? Event;
     editable.dispatchEvent(new InputEventCtor("input", { bubbles: true, data: replacement, inputType: "insertText" }));
 }
 
@@ -450,13 +413,13 @@ function locateTextBoundary(rootElement, targetOffset) {
         : { node: rootElement, offset: 0 };
 }
 
-export function getEditorText(editable) {
+function getEditorText(editable) {
     return (editable?.textContent ?? "")
         .replace(/\u00a0/g, " ")
         .replace(/\u200b/g, "");
 }
 
-export function getSelectionOffsets(editable) {
+function getSelectionOffsets(editable) {
     const documentRef = getDocument(editable);
     const selection = documentRef.getSelection?.();
     if (!selection?.rangeCount) return null;
@@ -500,11 +463,8 @@ function getPlainMatch(editorText, targetStart, remainder, caret) {
 
     return {
         query: editorText.slice(targetStart, Math.min(caret, targetEnd)).trim(),
-        replaceFrom: targetStart,
-        replaceTo: targetEnd,
         targetStart,
         targetEnd,
-        isBracketed: false,
         selectedNames: []
     };
 }
@@ -525,11 +485,8 @@ function getBracketedMatch(editorText, targetStart, remainder, caret) {
 
     return {
         query: currentSegment.text.slice(trimmed.leadingWhitespace, trimmed.trimmedEnd),
-        replaceFrom: innerStart + currentSegment.start + trimmed.leadingWhitespace,
-        replaceTo: innerStart + currentSegment.start + trimmed.trimmedEnd,
         targetStart,
         targetEnd,
-        isBracketed: true,
         selectedNames: getSelectedNames(segments, currentIndex)
     };
 }
@@ -575,7 +532,7 @@ function getSelectedNames(segments, currentIndex) {
         .filter(Boolean);
 }
 
-export function resolveHost(rootElement, hostSelector) {
+function resolveHost(rootElement, hostSelector) {
     if (!rootElement) return null;
     if (typeof rootElement.matches === "function" && rootElement.matches(hostSelector)) return rootElement;
 
@@ -583,19 +540,18 @@ export function resolveHost(rootElement, hostSelector) {
     return closestHost ?? rootElement.querySelector?.(hostSelector) ?? null;
 }
 
-export function resolveEditor(host) {
-    return host.querySelector("prose-mirror[name='message'], prose-mirror")
-        ?? host.querySelector(".editor-content[contenteditable='true'], [contenteditable='true']")
-        ?? null;
+function resolveEditor(host) {
+    return host.querySelector(AUTOCOMPLETE_WHISPER.MESSAGE_EDITOR_SELECTOR)
+        ?? host.querySelector(AUTOCOMPLETE_WHISPER.EDITABLE_SELECTOR);
 }
 
-export function resolveEditable(editor) {
+function resolveEditable(editor) {
     if (!editor) return null;
     if (editor.matches?.("[contenteditable='true']")) return editor;
-    return editor.querySelector?.(".editor-content[contenteditable='true'], [contenteditable='true']") ?? null;
+    return editor.querySelector?.(AUTOCOMPLETE_WHISPER.EDITABLE_SELECTOR) ?? null;
 }
 
-export function createPopup(host) {
+function createPopup(host) {
     const existing = host.querySelector(`.${AUTOCOMPLETE_WHISPER.POPUP_CLASS}`);
     if (existing) return existing;
 
@@ -609,18 +565,18 @@ export function createPopup(host) {
     return popup;
 }
 
-export function prepareEditable(editable, popupId) {
+function prepareEditable(editable, popupId) {
     editable.setAttribute("aria-autocomplete", "list");
     editable.setAttribute("aria-haspopup", "listbox");
     editable.setAttribute("aria-controls", popupId);
     editable.setAttribute("aria-expanded", "false");
 }
 
-export function clearEditableState(editable) {
+function clearEditableState(editable) {
     removeAttributes(editable, ...AUTOCOMPLETE_WHISPER.EDITABLE_ARIA_ATTRIBUTES);
 }
 
-export function renderPopup(state) {
+function renderPopup(state) {
     const documentRef = getDocument(state.popup);
     const options = state.suggestions.map((suggestion, index) => createSuggestionOption(documentRef, state, suggestion, index));
     state.popup.replaceChildren(...options);
@@ -629,7 +585,7 @@ export function renderPopup(state) {
     updateActiveDescendant(state);
 }
 
-export function hidePopup(state) {
+function hidePopup(state) {
     state.popup.hidden = true;
     state.popup.classList.remove(AUTOCOMPLETE_WHISPER.VISIBLE_CLASS);
     state.popup.replaceChildren();
@@ -644,7 +600,7 @@ function createSuggestionOption(documentRef, state, suggestion, index) {
     const isActive = index === state.activeIndex;
     const option = documentRef.createElement("div");
     option.className = `${AUTOCOMPLETE_WHISPER.OPTION_CLASS}${isActive ? ` ${AUTOCOMPLETE_WHISPER.ACTIVE_OPTION_CLASS}` : ""}`;
-    option.id = `${state.popupId}-option-${index}`;
+    option.id = `${state.popup.id}-option-${index}`;
     option.dataset[AUTOCOMPLETE_WHISPER.INDEX_DATA] = String(index);
     option.setAttribute("role", "option");
     option.setAttribute("aria-selected", String(isActive));
@@ -683,7 +639,7 @@ export function getSuggestions(match, users, maxResults) {
         .map(toSuggestion);
 }
 
-export function normalizeName(name) {
+function normalizeName(name) {
     return (name ?? "").trim().toLocaleLowerCase();
 }
 
@@ -719,8 +675,8 @@ function sortUsersByWhisperPriority(users) {
 
 function getRolePriority(user) {
     const roles = globalThis.CONST?.USER_ROLES ?? {};
-    const assistantRole = roles.ASSISTANT ?? 3;
-    const gmRole = roles.GAMEMASTER ?? 4;
+    const assistantRole = roles.ASSISTANT ?? AUTOCOMPLETE_WHISPER.DEFAULT_ASSISTANT_ROLE;
+    const gmRole = roles.GAMEMASTER ?? AUTOCOMPLETE_WHISPER.DEFAULT_GM_ROLE;
     const role = Number(user?.role ?? 0);
 
     if (user?.isGM || role >= gmRole) return 0;

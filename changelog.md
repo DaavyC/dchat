@@ -1,10 +1,10 @@
 ##### 1.4.5
 - Added an option to restore default settings
+- Debug is now a toggleable setting instead of being always active
 
 ##### 1.0.1 - 1.4.4
-- Bug fixes
-- Some changes that are not user-related
-- Autocomplete Whisper, Hide Private Messages, and Hide Chat Initiative are added as extra features
+- Fixed bugs
+- Added Autocomplete Whisper, Hide Private Messages, and Hide Chat Initiative as optional extra features
 
 ##### 1.0.0
 - Release

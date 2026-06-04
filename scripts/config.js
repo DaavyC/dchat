@@ -1,9 +1,27 @@
-export const MODULE_ID = "dchat";
+export const MODULE_TITLE = "Daavy's Chat";
+export const MODULE_ID = globalThis.game?.modules?.find(module => module.title === MODULE_TITLE)?.id ?? "daavy-chat";
 
 export const MESSAGE_TYPES = {
     CHAT: "chat",
     GAME: "game",
     WHISPER: "whisper",
+};
+
+export const HOOK_NAMES = {
+    INIT: "init",
+    READY: "ready",
+    I18N_INIT: "i18nInit",
+    RENDER_SETTINGS_CONFIG: "renderSettingsConfig",
+    RENDER_CHAT_INPUT: "renderChatInput",
+    RENDER_CHAT_LOG: "renderChatLog",
+    RENDER_SIDEBAR: "renderSidebar",
+    CHANGE_SIDEBAR_TAB: "changeSidebarTab",
+    OPEN_DETACHED_WINDOW: "openDetachedWindow",
+    CLOSE_DETACHED_WINDOW: "closeDetachedWindow",
+    RENDER_CHAT_MESSAGE_HTML: "renderChatMessageHTML",
+    CREATE_CHAT_MESSAGE: "createChatMessage",
+    PRE_CREATE_CHAT_MESSAGE: "preCreateChatMessage",
+    DELETE_CHAT_MESSAGE: "deleteChatMessage"
 };
 
 export const SETTING_KEYS = {
@@ -15,7 +33,8 @@ export const SETTING_KEYS = {
     HIDE_PRIVATE_MESSAGES: "hidePrivateMessages",
     HIDE_DAMAGE_TRAITS: "hideDamageTraits",
     TRAIT_FILTER: "traitFilter",
-    HIDE_DAMAGE_BUTTONS: "hideDamageButtons"
+    HIDE_DAMAGE_BUTTONS: "hideDamageButtons",
+    DEBUG: "debug"
 };
 
 export const SETTING_GROUPS = {
@@ -31,63 +50,70 @@ export const SETTING_GROUPS = {
         SETTING_KEYS.HIDE_DAMAGE_TRAITS,
         SETTING_KEYS.TRAIT_FILTER,
         SETTING_KEYS.HIDE_DAMAGE_BUTTONS
+    ],
+    Advanced: [
+        SETTING_KEYS.DEBUG
     ]
 };
 
 export const SETTING_DEFINITIONS = {
     [SETTING_KEYS.CLEANER_CHAT]: {
-        name: "DCHAT.Settings.cleanerChat.Name",
-        hint: "DCHAT.Settings.cleanerChat.Hint"
+        name: "daavy-chat.Settings.cleanerChat.Name",
+        hint: "daavy-chat.Settings.cleanerChat.Hint"
     },
     [SETTING_KEYS.COLLAPSIBLE_FORMULA]: {
-        name: "DCHAT.Settings.CollapsibleFormula.Name",
-        hint: "DCHAT.Settings.CollapsibleFormula.Hint"
+        name: "daavy-chat.Settings.CollapsibleFormula.Name",
+        hint: "daavy-chat.Settings.CollapsibleFormula.Hint"
     },
     [SETTING_KEYS.COMPACT_CHAT]: {
-        name: "DCHAT.Settings.compactChat.Name",
-        hint: "DCHAT.Settings.compactChat.Hint"
+        name: "daavy-chat.Settings.compactChat.Name",
+        hint: "daavy-chat.Settings.compactChat.Hint"
     },
     [SETTING_KEYS.AUTOCOMPLETE_WHISPER]: {
-        name: "DCHAT.Settings.autocompleteWhisper.Name",
-        hint: "DCHAT.Settings.autocompleteWhisper.Hint"
+        name: "daavy-chat.Settings.autocompleteWhisper.Name",
+        hint: "daavy-chat.Settings.autocompleteWhisper.Hint"
     },
     [SETTING_KEYS.HIDE_CHAT_INITIATIVE]: {
-        name: "DCHAT.Settings.hideChatInitiative.Name",
-        hint: "DCHAT.Settings.hideChatInitiative.Hint",
+        name: "daavy-chat.Settings.hideChatInitiative.Name",
+        hint: "daavy-chat.Settings.hideChatInitiative.Hint",
         scope: "world"
     },
     [SETTING_KEYS.HIDE_PRIVATE_MESSAGES]: {
-        name: "DCHAT.Settings.HidePrivateMessages.Name",
-        hint: "DCHAT.Settings.HidePrivateMessages.Hint",
+        name: "daavy-chat.Settings.HidePrivateMessages.Name",
+        hint: "daavy-chat.Settings.HidePrivateMessages.Hint",
         scope: "world",
         restricted: true
     },
     [SETTING_KEYS.HIDE_DAMAGE_TRAITS]: {
-        name: "DCHAT.Settings.hideDamageTraits.Name",
-        hint: "DCHAT.Settings.hideDamageTraits.Hint"
+        name: "daavy-chat.Settings.hideDamageTraits.Name",
+        hint: "daavy-chat.Settings.hideDamageTraits.Hint"
     },
     [SETTING_KEYS.TRAIT_FILTER]: {
-        name: "DCHAT.Settings.traitFilter.Name",
-        hint: "DCHAT.Settings.traitFilter.Hint"
+        name: "daavy-chat.Settings.traitFilter.Name",
+        hint: "daavy-chat.Settings.traitFilter.Hint"
     },
     [SETTING_KEYS.HIDE_DAMAGE_BUTTONS]: {
-        name: "DCHAT.Settings.HideDamageButtons.Name",
-        hint: "DCHAT.Settings.HideDamageButtons.Hint"
+        name: "daavy-chat.Settings.HideDamageButtons.Name",
+        hint: "daavy-chat.Settings.HideDamageButtons.Hint"
+    },
+    [SETTING_KEYS.DEBUG]: {
+        name: "daavy-chat.Settings.Debug.Name",
+        hint: "daavy-chat.Settings.Debug.Hint"
     }
 };
 
 export const FEATURE_CLASSES = {
-    CLEANER_CHAT: "dchat-cleaner-chat",
-    HIDE_DAMAGE_TRAITS: "dchat-hide-damage-traits",
-    TRAIT_FILTER: "dchat-trait-filter",
-    COLLAPSIBLE_FORMULA: "dchat-collapsible-formula",
-    COMPACT_CHAT: "dchat-compact-chat"
+    CLEANER_CHAT: "daavy-chat-cleaner-chat",
+    HIDE_DAMAGE_TRAITS: "daavy-chat-hide-damage-traits",
+    TRAIT_FILTER: "daavy-chat-trait-filter",
+    COLLAPSIBLE_FORMULA: "daavy-chat-collapsible-formula",
+    COMPACT_CHAT: "daavy-chat-compact-chat"
 };
 
 export const CHAT_TAB_CONFIG = [
-    { id: MESSAGE_TYPES.CHAT, label: "DCHAT.Tabs.Chat", icon: "fa-comments" },
-    { id: MESSAGE_TYPES.GAME, label: "DCHAT.Tabs.Game", icon: "fa-dice-d20" },
-    { id: MESSAGE_TYPES.WHISPER, label: "DCHAT.Tabs.Whispers", icon: "fa-lock" },
+    { id: MESSAGE_TYPES.CHAT, label: "daavy-chat.Tabs.Chat", icon: "fa-comments" },
+    { id: MESSAGE_TYPES.GAME, label: "daavy-chat.Tabs.Game", icon: "fa-dice-d20" },
+    { id: MESSAGE_TYPES.WHISPER, label: "daavy-chat.Tabs.Whispers", icon: "fa-lock" },
 ];
 
 export const CHAT_SELECTORS = {
@@ -97,52 +123,49 @@ export const CHAT_SELECTORS = {
     FOUNDRY_CLEAR_BUTTON: 'button[data-action="flush"]',
     FOUNDRY_CLEAR_ICON: ".fa-trash, .fa-trash-can",
     MESSAGE_LIST: "#chat-log, .chat-log, ol.chat-messages, [class*='chat-log']",
-    TAB_BAR: ".dchat-tab-bar",
-    TAB_BUTTON: ".dchat-tab-bar .dchat-tab",
-    TAB_DATA: "[data-dchat-tab]",
+    TAB_BAR: ".daavy-chat-tab-bar",
+    TAB_BUTTON: ".daavy-chat-tab-bar .daavy-chat-tab",
+    TAB_DATA: "[data-daavy-chat-tab]",
     MESSAGE_ID: "[data-message-id]",
-    SCOPED_CLEAR: ".dchat-scoped-clear",
-    PIP: ".dchat-pip"
+    SCOPED_CLEAR: ".daavy-chat-scoped-clear",
+    PIP: ".daavy-chat-pip"
 };
 
 export const CHAT_CLASSES = {
-    MODULE_TOOLBAR: "dchat-module-toolbar",
-    TAB_BAR: "dchat-tab-bar split-button",
-    TAB_BUTTON: "dchat-tab",
+    MODULE_TOOLBAR: "daavy-chat-module-toolbar",
+    TAB_BAR: "daavy-chat-tab-bar split-button",
+    TAB_BUTTON: "daavy-chat-tab",
     ACTIVE: "active",
-    PIP: "dchat-pip",
-    SCOPED_CLEAR: "ui-control icon fas fa-trash dchat-scoped-clear",
-    FILTER_PREFIX: "dchat-filter"
+    PIP: "daavy-chat-pip",
+    SCOPED_CLEAR: "ui-control icon fas fa-trash daavy-chat-scoped-clear",
+    FILTER_PREFIX: "daavy-chat-filter"
 };
 
 export const CHAT_DATA = {
-    TAB: "dchatTab",
-    TYPE: "dchat-type",
-    ACTION: "action",
-    SETTING_ID: "settingId",
-    SCOPED_CLEAR_ACTION: "scopedClear"
+    TAB: "daavyChatTab",
+    TYPE: "daavy-chat-type"
 };
 
 export const CHAT_SELECTOR_FACTORIES = {
-    TAB_BUTTON_BY_ID: (tabId) => `.${CHAT_CLASSES.TAB_BUTTON}[data-dchat-tab="${tabId}"]`
+    TAB_BUTTON_BY_ID: (tabId) => `.${CHAT_CLASSES.TAB_BUTTON}[data-daavy-chat-tab="${tabId}"]`
 };
 
 export const CHAT_I18N = {
-    TABS_ALL: "DCHAT.Tabs.All",
-    TABS_CHAT: "DCHAT.Tabs.Chat",
-    CLEAR_TOOLTIP: "DCHAT.Clear.Tooltip",
-    CLEAR_NO_MESSAGES: "DCHAT.Clear.NoMessages",
-    CLEAR_SUCCESS: "DCHAT.Clear.Success",
-    CLEAR_TITLE: "DCHAT.Clear.Title",
-    CLEAR_CONFIRM: "DCHAT.Clear.Confirm"
+    TABS_ALL: "daavy-chat.Tabs.All",
+    TABS_CHAT: "daavy-chat.Tabs.Chat",
+    CLEAR_TOOLTIP: "daavy-chat.Clear.Tooltip",
+    CLEAR_NO_MESSAGES: "daavy-chat.Clear.NoMessages",
+    CLEAR_SUCCESS: "daavy-chat.Clear.Success",
+    CLEAR_TITLE: "daavy-chat.Clear.Title",
+    CLEAR_CONFIRM: "daavy-chat.Clear.Confirm"
 };
 
 export const CHAT_BATCH_SIZE = 100;
 
 export const SETTINGS_CLASSES = {
-    ROW: "dchat-settings-row",
-    GROUP: "dchat-settings-group",
-    GROUP_TITLE: "dchat-settings-group-title"
+    ROW: "daavy-chat-settings-row",
+    GROUP: "daavy-chat-settings-group",
+    GROUP_TITLE: "daavy-chat-settings-group-title"
 };
 
 export const SETTINGS_SELECTORS = {
@@ -155,13 +178,13 @@ export const SETTINGS_SELECTOR_FACTORIES = {
 };
 
 export const SETTINGS_I18N = {
-    GROUP_PREFIX: "DCHAT.Settings.Groups"
+    GROUP_PREFIX: "daavy-chat.Settings.Groups"
 };
 
 export const RESET_DIALOG = {
     MENU_KEY: "resetSettings",
     MENU_ICON: "fas fa-layer-group",
-    I18N_PREFIX: "DCHAT.Settings.Reset",
+    I18N_PREFIX: "daavy-chat.Settings.Reset",
     YES_ACTION: "yes",
     NO_ACTION: "no",
     YES_ICON: "fa-solid fa-check",
@@ -177,25 +200,33 @@ export const CLEANER_CHAT_SELECTORS = {
 };
 
 export const CLEANER_CHAT_CLASSES = {
-    SHOW_FORMULA: "dchat-show"
+    SHOW_FORMULA: "daavy-chat-show"
 };
 
 export const AUTOCOMPLETE_WHISPER = {
     HOST_SELECTOR: "#chat-notifications, #chat-form, form.chat-form",
     EDITOR_SELECTOR: "prose-mirror[name='message'], prose-mirror, .editor-content[contenteditable='true'], [contenteditable='true']",
+    MESSAGE_EDITOR_SELECTOR: "prose-mirror[name='message'], prose-mirror",
+    EDITABLE_SELECTOR: ".editor-content[contenteditable='true'], [contenteditable='true']",
     MAX_RESULTS: 6,
+    STARTUP_REFRESH_DELAYS_MS: [0, 150, 500, 1200, 2500, 5000],
+    BOOTSTRAP_INTERVAL_MS: 500,
+    MAX_BOOTSTRAP_ATTEMPTS: 20,
+    CARET_NAVIGATION_KEYS: ["ArrowLeft", "ArrowRight", "Home", "End"],
+    DEFAULT_ASSISTANT_ROLE: 3,
+    DEFAULT_GM_ROLE: 4,
     PREFIX_PATTERN: /^(\/w|\/whisper)\s+/i,
-    HOST_CLASS: "dchat-whisper-autocomplete-host",
-    POPUP_CLASS: "dchat-whisper-autocomplete",
+    HOST_CLASS: "daavy-chat-whisper-autocomplete-host",
+    POPUP_CLASS: "daavy-chat-whisper-autocomplete",
     VISIBLE_CLASS: "visible",
-    POPUP_ID_PREFIX: "dchat-whisper",
-    OPTION_CLASS: "dchat-whisper-option",
+    POPUP_ID_PREFIX: "daavy-chat-whisper",
+    OPTION_CLASS: "daavy-chat-whisper-option",
     ACTIVE_OPTION_CLASS: "active",
-    STATUS_CLASS: "dchat-whisper-status",
+    STATUS_CLASS: "daavy-chat-whisper-status",
     ACTIVE_STATUS_CLASS: "is-active",
-    NAME_CLASS: "dchat-whisper-name",
-    INDEX_DATA: "dchatWhisperIndex",
-    INDEX_SELECTOR: "[data-dchat-whisper-index]",
+    NAME_CLASS: "daavy-chat-whisper-name",
+    INDEX_DATA: "daavyChatWhisperIndex",
+    INDEX_SELECTOR: "[data-daavy-chat-whisper-index]",
     EDITABLE_ARIA_ATTRIBUTES: [
         "aria-activedescendant",
         "aria-autocomplete",
@@ -212,25 +243,25 @@ export const PF2E_SELECTORS = {
     TRAIT_TAGS: '.tags .tag:is([data-trait], [data-slug]):not(.tag_transparent)[data-tooltip]',
     TRAIT_CONTAINERS: ".tags",
     VISIBLE_TRAIT_TAGS: "span.tag:is([data-trait], [data-slug]):not(.tag_transparent)",
-    CLICKABLE_TRAIT_TAG: "span.tag.dchat-clickable",
+    CLICKABLE_TRAIT_TAG: "span.tag.daavy-chat-clickable",
     DAMAGE_BUTTONS: "button.success[data-action='strike-damage'], button.critical-success[data-action='strike-damage']",
     MESSAGE_METADATA: ".message-metadata",
     MESSAGE_DELETE: ".message-delete",
-    TOGGLE_DAMAGE_BUTTONS: ".dchat-toggle-buttons"
+    TOGGLE_DAMAGE_BUTTONS: ".daavy-chat-toggle-buttons"
 };
 
 export const PF2E_CLASSES = {
-    FILTERED_TRAIT: "dchat-filtered",
-    CLICKABLE_TRAIT: "dchat-clickable",
-    HIDDEN_TRAIT: "dchat-hidden",
-    EXPANDED_TRAITS: "dchat-expanded",
-    HIDDEN_DAMAGE_BUTTONS: "dchat-buttons-hidden",
-    TOGGLE_DAMAGE_BUTTONS: "dchat-toggle-buttons"
+    FILTERED_TRAIT: "daavy-chat-filtered",
+    CLICKABLE_TRAIT: "daavy-chat-clickable",
+    HIDDEN_TRAIT: "daavy-chat-hidden",
+    EXPANDED_TRAITS: "daavy-chat-expanded",
+    HIDDEN_DAMAGE_BUTTONS: "daavy-chat-buttons-hidden",
+    TOGGLE_DAMAGE_BUTTONS: "daavy-chat-toggle-buttons"
 };
 
 export const PF2E_DATA = {
-    TRAITS_LIMITED: "dchatLimited",
-    DAMAGE_BUTTONS_PROCESSED: "dchatButtonsProcessed"
+    TRAITS_LIMITED: "daavyChatLimited",
+    DAMAGE_BUTTONS_PROCESSED: "daavyChatButtonsProcessed"
 };
 
 export const PF2E_LIMITS = {
@@ -238,9 +269,14 @@ export const PF2E_LIMITS = {
 };
 
 export const PF2E_I18N = {
-    SHOW_DAMAGE_BUTTONS: "DCHAT.HideDamageButtons.Show",
-    HIDE_DAMAGE_BUTTONS: "DCHAT.HideDamageButtons.Hide",
-    TOGGLE_DAMAGE_BUTTONS: "DCHAT.HideDamageButtons.ToggleLabel"
+    SHOW_DAMAGE_BUTTONS: "daavy-chat.HideDamageButtons.Show",
+    HIDE_DAMAGE_BUTTONS: "daavy-chat.HideDamageButtons.Hide",
+    TOGGLE_DAMAGE_BUTTONS: "daavy-chat.HideDamageButtons.ToggleLabel"
+};
+
+export const PF2E_ICONS = {
+    DAMAGE_BUTTONS_HIDDEN: "fa-solid fa-eye-slash",
+    DAMAGE_BUTTONS_VISIBLE: "fa-solid fa-eye"
 };
 
 export const PF2E_TRAITS_TO_HIDE = [
@@ -290,7 +326,3 @@ export const PF2E_TRAITS_TO_HIDE = [
     "persona-scholar", "persona-scoundrel", "persona-underdog", "persona-warrior",
     "persona-wildcard", "environmental", "army", "cavalry", "infantry", "siege", "skirmisher"
 ];
-
-export const PRIVATE_MESSAGE_DATA = {
-    HIDDEN: "dchatPrivateHidden"
-};

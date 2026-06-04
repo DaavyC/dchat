@@ -1,9 +1,9 @@
-import { PF2E_CLASSES, PF2E_DATA, PF2E_I18N, PF2E_LIMITS, PF2E_SELECTORS, PF2E_TRAITS_TO_HIDE } from "../config.js";
-import { getDocument, getElement, isCurrentUserAuthor, registerCleanup } from "../utils.js";
-import { isHookDebugEnabled, log } from "../debug.js";
+import { PF2E_CLASSES, PF2E_DATA, PF2E_I18N, PF2E_ICONS, PF2E_LIMITS, PF2E_SELECTORS, PF2E_TRAITS_TO_HIDE } from "../config.js";
+import { getCleanupSignal, getDocument, getElement, isCurrentUserAuthor } from "../utils.js";
+import { log } from "../debug.js";
 
 export class HideDamageTraits {
-    static processMessage(message, renderedHtml) {
+    static processMessage(_message, renderedHtml) {
         const messageElement = getElement(renderedHtml);
         if (!messageElement || !messageElement.querySelector(PF2E_SELECTORS.DAMAGE_ROLL)) return;
 
@@ -15,7 +15,7 @@ export class HideDamageTraits {
 }
 
 export class TraitFilter {
-    static processMessage(message, renderedHtml) {
+    static processMessage(_message, renderedHtml) {
         const messageElement = getElement(renderedHtml);
         if (!messageElement) return;
 
@@ -24,11 +24,8 @@ export class TraitFilter {
             const tooltip = tag.dataset.tooltip;
             if (!tooltip) continue;
 
-            if (isHookDebugEnabled()) {
-                log("TraitFilter: tooltip =", tooltip, "toLowerCase =", tooltip.toLowerCase());
-            }
-
             const tooltipLower = tooltip.toLowerCase();
+            log("TraitFilter: tooltip =", tooltip, "toLowerCase =", tooltipLower);
             const shouldHide = PF2E_TRAITS_TO_HIDE.some(trait => tooltipLower.endsWith(trait));
 
             if (shouldHide) {
@@ -37,10 +34,10 @@ export class TraitFilter {
             }
         }
 
-        this.applyTraitLimit(messageElement);
+        this._applyTraitLimit(messageElement);
     }
 
-    static applyTraitLimit(messageElement) {
+    static _applyTraitLimit(messageElement) {
         messageElement.querySelectorAll(PF2E_SELECTORS.TRAIT_CONTAINERS).forEach(container => {
             if (container.dataset[PF2E_DATA.TRAITS_LIMITED]) return;
             container.dataset[PF2E_DATA.TRAITS_LIMITED] = "true";
@@ -75,20 +72,16 @@ export class HideDamageButtons {
     static processMessage(message, renderedHtml) {
         const messageElement = getElement(renderedHtml);
         if (!messageElement || messageElement.dataset[PF2E_DATA.DAMAGE_BUTTONS_PROCESSED]) return;
-        messageElement.dataset[PF2E_DATA.DAMAGE_BUTTONS_PROCESSED] = "true";
 
         const damageButtons = messageElement.querySelectorAll(PF2E_SELECTORS.DAMAGE_BUTTONS);
         if (!damageButtons.length) return;
+        messageElement.dataset[PF2E_DATA.DAMAGE_BUTTONS_PROCESSED] = "true";
 
-        const metadata = messageElement.querySelector(PF2E_SELECTORS.MESSAGE_METADATA);
+        const messageMetadata = messageElement.querySelector(PF2E_SELECTORS.MESSAGE_METADATA);
         const canToggle = isCurrentUserAuthor(message) || !!game.user?.isGM;
         this._setButtonsHidden(damageButtons, true);
 
-        const signal = registerCleanup(messageElement, () => {
-            damageButtons.forEach(button => {
-                button.onclick = null;
-            });
-        });
+        const signal = getCleanupSignal(messageElement);
 
         damageButtons.forEach(button => {
             button.addEventListener("click", () => {
@@ -98,31 +91,34 @@ export class HideDamageButtons {
             }, { signal });
         });
 
-        if (canToggle && metadata) this.addToggleIcon(metadata, damageButtons, signal);
+        if (canToggle && messageMetadata) this._addVisibilityToggle(messageMetadata, damageButtons, signal);
     }
 
-    static _setButtonsHidden(buttons, hidden) {
-        buttons.forEach(button => button.classList.toggle(PF2E_CLASSES.HIDDEN_DAMAGE_BUTTONS, hidden));
+    static _setButtonsHidden(damageButtons, shouldHide) {
+        damageButtons.forEach(button => button.classList.toggle(PF2E_CLASSES.HIDDEN_DAMAGE_BUTTONS, shouldHide));
     }
 
-    static _setToggleIcon(toggleIcon, hidden) {
-        toggleIcon.innerHTML = hidden ? '<i class="fa-solid fa-eye-slash"></i>' : '<i class="fa-solid fa-eye"></i>';
-        toggleIcon.title = hidden
+    static _setToggleIcon(toggleIcon, areButtonsHidden) {
+        const documentRef = getDocument(toggleIcon);
+        const icon = documentRef.createElement("i");
+        icon.className = areButtonsHidden ? PF2E_ICONS.DAMAGE_BUTTONS_HIDDEN : PF2E_ICONS.DAMAGE_BUTTONS_VISIBLE;
+        toggleIcon.replaceChildren(icon);
+        toggleIcon.title = areButtonsHidden
             ? game.i18n.localize(PF2E_I18N.SHOW_DAMAGE_BUTTONS)
             : game.i18n.localize(PF2E_I18N.HIDE_DAMAGE_BUTTONS);
     }
 
-    static addToggleIcon(metadata, damageButtons, signal) {
-        if (metadata.querySelector(PF2E_SELECTORS.TOGGLE_DAMAGE_BUTTONS)) return;
+    static _addVisibilityToggle(messageMetadata, damageButtons, signal) {
+        if (messageMetadata.querySelector(PF2E_SELECTORS.TOGGLE_DAMAGE_BUTTONS)) return;
 
-        const documentRef = getDocument(metadata);
+        const documentRef = getDocument(messageMetadata);
         const toggleIcon = documentRef.createElement("a");
         toggleIcon.className = PF2E_CLASSES.TOGGLE_DAMAGE_BUTTONS;
         toggleIcon.setAttribute("aria-label", game.i18n.localize(PF2E_I18N.TOGGLE_DAMAGE_BUTTONS));
 
         const updateIcon = () => {
-            const hidden = damageButtons[0]?.classList.contains(PF2E_CLASSES.HIDDEN_DAMAGE_BUTTONS);
-            this._setToggleIcon(toggleIcon, hidden);
+            const areButtonsHidden = damageButtons[0]?.classList.contains(PF2E_CLASSES.HIDDEN_DAMAGE_BUTTONS);
+            this._setToggleIcon(toggleIcon, areButtonsHidden);
         };
 
         updateIcon();
@@ -130,16 +126,16 @@ export class HideDamageButtons {
         toggleIcon.addEventListener("click", (event) => {
             event.preventDefault();
             event.stopPropagation();
-            const hidden = damageButtons[0]?.classList.contains(PF2E_CLASSES.HIDDEN_DAMAGE_BUTTONS);
-            this._setButtonsHidden(damageButtons, !hidden);
+            const areButtonsHidden = damageButtons[0]?.classList.contains(PF2E_CLASSES.HIDDEN_DAMAGE_BUTTONS);
+            this._setButtonsHidden(damageButtons, !areButtonsHidden);
             updateIcon();
         }, { signal });
 
-        const deleteButton = metadata.querySelector(PF2E_SELECTORS.MESSAGE_DELETE);
+        const deleteButton = messageMetadata.querySelector(PF2E_SELECTORS.MESSAGE_DELETE);
         if (deleteButton) {
-            metadata.insertBefore(toggleIcon, deleteButton.nextSibling);
+            messageMetadata.insertBefore(toggleIcon, deleteButton.nextSibling);
         } else {
-            metadata.appendChild(toggleIcon);
+            messageMetadata.appendChild(toggleIcon);
         }
     }
 }

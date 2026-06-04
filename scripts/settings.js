@@ -10,7 +10,7 @@ import {
 } from "./config.js";
 import { getDocument, getElement } from "./utils.js";
 
-export class SettingsManager {
+export class SettingsLayout {
     static groupSettings(renderedHtml) {
         const container = getElement(renderedHtml);
         if (!container) return;
@@ -25,7 +25,7 @@ export class SettingsManager {
     static _groupSettingRows(container, documentRef, groupKey, settingKeys) {
         const rows = settingKeys
             .map(key => this._findSettingRow(container, key))
-            .filter(Boolean);
+            .filter(row => this._isUngroupedSettingRow(row));
         if (!rows.length) return;
 
         const fieldset = this._createGroupFieldset(documentRef, groupKey);
@@ -56,6 +56,10 @@ export class SettingsManager {
             ?? container.querySelector(SETTINGS_SELECTOR_FACTORIES.INPUT(settingId))?.closest(SETTINGS_SELECTORS.FORM_GROUP)
             ?? null;
     }
+
+    static _isUngroupedSettingRow(row) {
+        return row && !row.closest(`.${SETTINGS_CLASSES.GROUP}`);
+    }
 }
 
 export function registerModuleSettings() {
@@ -80,7 +84,7 @@ function registerBooleanSetting(key, options) {
     game.settings.register(MODULE_ID, key, {
         scope: "client",
         config: true,
-        default: false,
+        default: getSettingDefault(options),
         type: Boolean,
         ...options
     });
@@ -90,27 +94,23 @@ export function isSettingEnabled(key) {
     return game.settings.get(MODULE_ID, key);
 }
 
-async function resetSettingsToDefault(app) {
+async function resetSettingsToDefaults(app) {
     await Promise.all(Object.entries(SETTING_DEFINITIONS).map(([key, options]) => (
-        game.settings.set(MODULE_ID, key, options.default ?? false)
+        game.settings.set(MODULE_ID, key, getSettingDefault(options))
     )));
     app?.render?.(true);
 }
 
-export async function confirmResetSettings(app = game.settings.sheet) {
+async function confirmResetSettings(app = game.settings.sheet) {
     const confirmed = await showResetConfirmation();
     if (!confirmed) return;
 
-    await resetSettingsToDefault(app);
+    await resetSettingsToDefaults(app);
 }
 
 export class ResetSettingsDialog extends (globalThis.FormApplication ?? class {}) {
-    constructor(...args) {
-        super(...args);
-
-        return {
-            render: () => confirmResetSettings(game.settings.sheet)
-        };
+    render() {
+        return confirmResetSettings(game.settings.sheet);
     }
 }
 
@@ -149,4 +149,8 @@ function getResetDialogOptions() {
 
 function localizeReset(key) {
     return game.i18n.localize(`${RESET_DIALOG.I18N_PREFIX}.Confirm.${key}`);
+}
+
+function getSettingDefault(options) {
+    return options.default ?? false;
 }

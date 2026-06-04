@@ -7,12 +7,12 @@ export class HideChatInitiative {
         if (!isSettingEnabled(SETTING_KEYS.HIDE_CHAT_INITIATIVE)) return;
 
         const messageData = creationData ? expandObject(creationData) : message.toObject();
-        if (!this.isInitiativeMessage(messageData)) return;
+        if (!this._isInitiativeMessage(messageData)) return;
 
         return false;
     }
 
-    static isInitiativeMessage(messageData) {
+    static _isInitiativeMessage(messageData) {
         return getProperty(messageData, "flags.core.initiativeRoll") === true;
     }
 }

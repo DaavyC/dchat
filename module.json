@@ -1,7 +1,7 @@
 {
   "id": "dchat",
   "title": "Daavy's Chat",
-  "description": "<p>Organizes chat into Chat, Game, and Whispers tabs and adds modular quality-of-life improvements for the chat log.</p>",
+  "description": "<p>Adds Chat, Game, and Whispers tabs, along with optional chat improvements.</p>",
   "version": "1.4.5",
   "authors": [
     {

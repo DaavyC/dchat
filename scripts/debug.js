@@ -1,15 +1,14 @@
-export function isHookDebugEnabled() {
-    return !!globalThis.CONFIG?.debug?.hooks;
-}
+import { MODULE_ID, SETTING_KEYS } from "./config.js";
 
 export function log(...args) {
-    if (isHookDebugEnabled()) console.log("DCHAT:", ...args);
-}
-
-export function warn(...args) {
-    console.warn("DCHAT:", ...args);
+    if (isDebugEnabled()) console.log("Daavy's Chat:", ...args);
 }
 
 export function error(...args) {
-    console.error("DCHAT:", ...args);
+    console.error("Daavy's Chat:", ...args);
+}
+
+export function isDebugEnabled() {
+    if (!globalThis.game?.settings) return false;
+    return game.settings.get(MODULE_ID, SETTING_KEYS.DEBUG) === true;
 }

@@ -1,3 +1,3 @@
-import { registerDchatHooks } from "./scripts/hooks.js";
+import { registerDaavyChatHooks } from "./scripts/hooks.js";
 
-registerDchatHooks();
+registerDaavyChatHooks();

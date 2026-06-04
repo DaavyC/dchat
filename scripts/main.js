@@ -9,19 +9,18 @@ import {
     FEATURE_CLASSES,
     SETTING_KEYS
 } from "./config.js";
-import { SettingsManager, isSettingEnabled, registerModuleSettings } from "./settings.js";
+import { isSettingEnabled, registerModuleSettings } from "./settings.js";
 import { MessageClassifier, cleanupDeletedMessage, getDocument, getElement, rememberMessageElement } from "./utils.js";
 import { AutocompleteWhisper } from "./features/autocomplete-whisper.js";
-import { CleanerChat, CollapsibleFormula, CompactChat } from "./features/cleaner-chat.js";
-import { HideChatInitiative } from "./features/hide-chat-initiative.js";
+import { CleanerChat, CollapsibleFormula } from "./features/cleaner-chat.js";
 import { HidePrivateMessages } from "./features/hide-private-messages.js";
 import { HideDamageButtons, HideDamageTraits, TraitFilter } from "./features/pf2e-only.js";
 
-export class ChatLogManager {
+export class ChatClearControls {
     static _observers = new WeakMap();
 
     static observeChatLog(renderedHtml) {
-        this._observeAndReplace(getElement(renderedHtml));
+        this._observeChatLog(getElement(renderedHtml));
     }
 
     static scheduleRefresh(element = null) {
@@ -40,7 +39,7 @@ export class ChatLogManager {
         });
     }
 
-    static _observeAndReplace(element) {
+    static _observeChatLog(element) {
         if (!element) return;
 
         this._observers.get(element)?.disconnect();
@@ -58,7 +57,6 @@ export class ChatLogManager {
         const button = documentRef.createElement("button");
         button.type = "button";
         button.className = CHAT_CLASSES.SCOPED_CLEAR;
-        button.dataset[CHAT_DATA.ACTION] = CHAT_DATA.SCOPED_CLEAR_ACTION;
 
         const tooltip = game.i18n.localize(CHAT_I18N.CLEAR_TOOLTIP);
         button.dataset.tooltip = tooltip;
@@ -136,10 +134,10 @@ export class ChatLogManager {
         return game.messages.filter(message => MessageClassifier.classify(message) === ChatTabsManager.activeTab);
     }
 
-    static _confirmClear(tabLabel, count) {
+    static _confirmClear(tabLabel, messageCount) {
         return foundry.applications.api.DialogV2.confirm({
             window: { title: game.i18n.format(CHAT_I18N.CLEAR_TITLE, { label: tabLabel }) },
-            content: `<p>${game.i18n.format(CHAT_I18N.CLEAR_CONFIRM, { count, label: tabLabel })}</p>`,
+            content: `<p>${game.i18n.format(CHAT_I18N.CLEAR_CONFIRM, { count: messageCount, label: tabLabel })}</p>`,
             yes: { default: true },
             no: { default: false },
         });
@@ -232,13 +230,13 @@ export class ChatTabsManager {
         const toolbar = this._ensureModuleToolbar(element);
         if (!toolbar) return;
 
-        toolbar.querySelectorAll(".dchat-tab-bar").forEach(tabBar => tabBar.remove());
+        toolbar.querySelectorAll(CHAT_SELECTORS.TAB_BAR).forEach(tabBar => tabBar.remove());
         toolbar.prepend(this._buildTabBar(getDocument(element)));
         this._applyFilterClass(element, messageLog, this.activeTab);
         this.classifyExistingMessages(element);
         this._bindTabBar(element);
 
-        ChatLogManager.refresh(element);
+        ChatClearControls.refresh(element);
     }
 
     static switch(tabId) {
@@ -357,23 +355,20 @@ export class ChatTabsManager {
     }
 }
 
-export const FEATURES = [
-    { class: CleanerChat, setting: SETTING_KEYS.CLEANER_CHAT, css: FEATURE_CLASSES.CLEANER_CHAT },
-    { class: HideDamageTraits, setting: SETTING_KEYS.HIDE_DAMAGE_TRAITS, css: FEATURE_CLASSES.HIDE_DAMAGE_TRAITS },
-    { class: TraitFilter, setting: SETTING_KEYS.TRAIT_FILTER, css: FEATURE_CLASSES.TRAIT_FILTER },
-    { class: CollapsibleFormula, setting: SETTING_KEYS.COLLAPSIBLE_FORMULA, css: FEATURE_CLASSES.COLLAPSIBLE_FORMULA },
-    { class: CompactChat, setting: SETTING_KEYS.COMPACT_CHAT, css: FEATURE_CLASSES.COMPACT_CHAT },
-    { class: AutocompleteWhisper, setting: SETTING_KEYS.AUTOCOMPLETE_WHISPER },
-    { class: HideChatInitiative, setting: SETTING_KEYS.HIDE_CHAT_INITIATIVE },
-    { class: HidePrivateMessages, setting: SETTING_KEYS.HIDE_PRIVATE_MESSAGES },
-    { class: HideDamageButtons, setting: SETTING_KEYS.HIDE_DAMAGE_BUTTONS }
+const MESSAGE_FEATURES = [
+    { handler: CleanerChat, setting: SETTING_KEYS.CLEANER_CHAT, css: FEATURE_CLASSES.CLEANER_CHAT },
+    { handler: HideDamageTraits, setting: SETTING_KEYS.HIDE_DAMAGE_TRAITS, css: FEATURE_CLASSES.HIDE_DAMAGE_TRAITS },
+    { handler: TraitFilter, setting: SETTING_KEYS.TRAIT_FILTER, css: FEATURE_CLASSES.TRAIT_FILTER },
+    { handler: CollapsibleFormula, setting: SETTING_KEYS.COLLAPSIBLE_FORMULA, css: FEATURE_CLASSES.COLLAPSIBLE_FORMULA },
+    { setting: SETTING_KEYS.COMPACT_CHAT, css: FEATURE_CLASSES.COMPACT_CHAT },
+    { handler: AutocompleteWhisper, setting: SETTING_KEYS.AUTOCOMPLETE_WHISPER },
+    { handler: HidePrivateMessages, setting: SETTING_KEYS.HIDE_PRIVATE_MESSAGES },
+    { handler: HideDamageButtons, setting: SETTING_KEYS.HIDE_DAMAGE_BUTTONS }
 ];
-
-export { AutocompleteWhisper, HideChatInitiative, HidePrivateMessages, MessageClassifier, SettingsManager };
 
 export function initializeFeatures() {
     registerModuleSettings();
-    FEATURES.forEach(feature => feature.class.init?.());
+    MESSAGE_FEATURES.forEach(feature => feature.handler?.init?.());
 }
 
 export function processFeatures(message, renderedHtml) {
@@ -382,22 +377,22 @@ export function processFeatures(message, renderedHtml) {
 
     element.setAttribute(`data-${CHAT_DATA.TYPE}`, MessageClassifier.classify(message));
 
-    for (const feature of FEATURES) {
-        if (isSettingEnabled(feature.setting)) {
-            if (feature.css) element.classList.add(feature.css);
-            feature.class.processMessage?.(message, renderedHtml);
-        }
+    for (const feature of MESSAGE_FEATURES) {
+        if (!isSettingEnabled(feature.setting)) continue;
+
+        if (feature.css) element.classList.add(feature.css);
+        feature.handler?.processMessage?.(message, renderedHtml);
     }
 }
 
-export function refreshChatManagers(element = null) {
+export function refreshChatUi(element = null) {
     ChatTabsManager.refresh(element);
-    ChatLogManager.refresh(element);
+    ChatClearControls.refresh(element);
 }
 
-export function scheduleChatRefreshes() {
+export function scheduleChatUiRefresh() {
     ChatTabsManager.scheduleRefresh();
-    ChatLogManager.scheduleRefresh();
+    ChatClearControls.scheduleRefresh();
 }
 
 export function addChatNotification(message) {

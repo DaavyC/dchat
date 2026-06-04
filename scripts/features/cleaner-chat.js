@@ -2,7 +2,7 @@ import { CLEANER_CHAT_CLASSES, CLEANER_CHAT_SELECTORS } from "../config.js";
 import { getElement, registerCleanup } from "../utils.js";
 
 export class CleanerChat {
-    static processMessage(message, renderedHtml) {
+    static processMessage(_message, renderedHtml) {
         const messageElement = getElement(renderedHtml);
         if (!messageElement) return;
 
@@ -12,7 +12,7 @@ export class CleanerChat {
 }
 
 export class CollapsibleFormula {
-    static processMessage(message, renderedHtml) {
+    static processMessage(_message, renderedHtml) {
         const messageElement = getElement(renderedHtml);
         if (!messageElement) return;
 
@@ -20,7 +20,6 @@ export class CollapsibleFormula {
             messageElement.querySelectorAll(CLEANER_CHAT_SELECTORS.ROLL_TITLE).forEach(title => {
                 title.style.cursor = "";
                 title.style.userSelect = "";
-                title.onclick = null;
             });
         });
 
@@ -37,7 +36,4 @@ export class CollapsibleFormula {
             }
         });
     }
-}
-
-export class CompactChat {
 }

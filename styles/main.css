@@ -1,4 +1,4 @@
-.dchat-settings-group {
+.daavy-chat-settings-group {
     border: 1px solid var(--color-border-light-primary, #a1a1a1);
     border-radius: 5px;
     margin: 15px 0;
@@ -6,19 +6,19 @@
     display: block;
 }
 
-.dchat-settings-group-title {
+.daavy-chat-settings-group-title {
     padding: 0 5px;
     font-weight: bold;
     font-size: var(--font-size-14, 14px);
     color: var(--color-text-primary, #f0f0e0);
 }
 
-.dchat-settings-row {
+.daavy-chat-settings-row {
     margin: 5px 0;
     border: none;
 }
 
-.dchat-module-toolbar {
+.daavy-chat-module-toolbar {
     display: flex;
     align-items: center;
     gap: 4px;
@@ -28,30 +28,30 @@
     margin-bottom: 4px;
 }
 
-.dchat-module-toolbar .dchat-tab-bar {
+.daavy-chat-module-toolbar .daavy-chat-tab-bar {
     margin-right: auto;
 }
 
-.dchat-scoped-clear {
+.daavy-chat-scoped-clear {
     margin-left: 4px;
 }
 
-.dchat-tab-bar {
+.daavy-chat-tab-bar {
     position: relative;
     z-index: 10;
     margin-right: 4px;
 }
 
-.dchat-tab-bar .dchat-tab {
+.daavy-chat-tab-bar .daavy-chat-tab {
     position: relative;
 }
 
-.dchat-tab-bar .dchat-tab.active {
+.daavy-chat-tab-bar .daavy-chat-tab.active {
     outline: none;
     box-shadow: none;
 }
 
-.dchat-pip {
+.daavy-chat-pip {
     position: absolute;
     top: 4px;
     right: 4px;
@@ -60,102 +60,102 @@
     border-radius: 50%;
     background: var(--color-shadow-highlight, #ffffff);
     box-shadow: 0 0 4px rgba(255, 255, 255, 0.6);
-    animation: dchat-pip-pulse 1.5s ease-in-out infinite;
+    animation: daavy-chat-pip-pulse 1.5s ease-in-out infinite;
     pointer-events: none;
 }
 
-@keyframes dchat-pip-pulse {
+@keyframes daavy-chat-pip-pulse {
     0%, 100% { transform: scale(1); opacity: 1; }
     50% { transform: scale(1.3); opacity: 0.7; }
 }
 
-.dchat-filter-chat .message[data-dchat-type="game"],
-.dchat-filter-chat .message[data-dchat-type="whisper"] {
+.daavy-chat-filter-chat .message[data-daavy-chat-type="game"],
+.daavy-chat-filter-chat .message[data-daavy-chat-type="whisper"] {
     display: none !important;
 }
 
-.dchat-filter-game .message[data-dchat-type="chat"],
-.dchat-filter-game .message[data-dchat-type="whisper"] {
+.daavy-chat-filter-game .message[data-daavy-chat-type="chat"],
+.daavy-chat-filter-game .message[data-daavy-chat-type="whisper"] {
     display: none !important;
 }
 
-.dchat-filter-whisper .message[data-dchat-type="chat"],
-.dchat-filter-whisper .message[data-dchat-type="game"] {
+.daavy-chat-filter-whisper .message[data-daavy-chat-type="chat"],
+.daavy-chat-filter-whisper .message[data-daavy-chat-type="game"] {
     display: none !important;
 }
 
-.chat-message.dchat-cleaner-chat header img,
-.chat-message.dchat-cleaner-chat .message-header img,
-.chat-message.dchat-cleaner-chat .message-portrait,
-.chat-message.dchat-cleaner-chat [class*="portrait"],
-.chat-message.dchat-cleaner-chat header span.user,
-.chat-message.dchat-cleaner-chat .message-header span.user {
+.chat-message.daavy-chat-cleaner-chat header img,
+.chat-message.daavy-chat-cleaner-chat .message-header img,
+.chat-message.daavy-chat-cleaner-chat .message-portrait,
+.chat-message.daavy-chat-cleaner-chat [class*="portrait"],
+.chat-message.daavy-chat-cleaner-chat header span.user,
+.chat-message.daavy-chat-cleaner-chat .message-header span.user {
     display: none !important;
 }
 
-.chat-message.dchat-cleaner-chat .message-content img {
+.chat-message.daavy-chat-cleaner-chat .message-content img {
     display: initial !important;
 }
 
-.chat-message.dchat-cleaner-chat header,
-.chat-message.dchat-cleaner-chat .message-header {
+.chat-message.daavy-chat-cleaner-chat header,
+.chat-message.daavy-chat-cleaner-chat .message-header {
     display: flex !important;
     align-items: baseline !important;
     grid-template-columns: none !important;
     gap: 2px !important;
 }
 
-.chat-message.dchat-cleaner-chat .message-sender {
+.chat-message.daavy-chat-cleaner-chat .message-sender {
     flex: 0 0 auto !important;
 }
 
-.chat-message.dchat-cleaner-chat .message-metadata {
+.chat-message.daavy-chat-cleaner-chat .message-metadata {
     margin-left: auto !important;
 }
 
-.chat-message.dchat-cleaner-chat header div:empty,
-.chat-message.dchat-cleaner-chat header .avatar {
+.chat-message.daavy-chat-cleaner-chat header div:empty,
+.chat-message.daavy-chat-cleaner-chat header .avatar {
     display: none !important;
 }
 
-.chat-message.dchat-compact-chat header,
-.chat-message.dchat-compact-chat .message-header {
+.chat-message.daavy-chat-compact-chat header,
+.chat-message.daavy-chat-compact-chat .message-header {
     display: flex !important;
     flex-wrap: wrap !important;
     align-items: center !important;
     line-height: 1 !important;
 }
 
-.chat-message.dchat-compact-chat header .message-sender,
-.chat-message.dchat-compact-chat .message-header .message-sender {
+.chat-message.daavy-chat-compact-chat header .message-sender,
+.chat-message.daavy-chat-compact-chat .message-header .message-sender {
     margin-right: 5px !important;
     margin-bottom: 0 !important;
 }
 
-.chat-message.dchat-compact-chat header .flavor-text,
-.chat-message.dchat-compact-chat .message-header .flavor-text {
+.chat-message.daavy-chat-compact-chat header .flavor-text,
+.chat-message.daavy-chat-compact-chat .message-header .flavor-text {
     margin-left: 0 !important;
     padding-left: 0 !important;
     display: inline-block !important;
 }
 
-.chat-message.dchat-collapsible-formula .dice-formula {
+.chat-message.daavy-chat-collapsible-formula .dice-formula {
     display: none !important;
 }
 
-.chat-message.dchat-collapsible-formula .dice-formula.dchat-show {
+.chat-message.daavy-chat-collapsible-formula .dice-formula.daavy-chat-show {
     display: block !important;
 }
 
-.chat-message.dchat-collapsible-formula .dice-roll h4:hover {
+.chat-message.daavy-chat-collapsible-formula .dice-roll h4:hover {
     opacity: 0.8;
 }
 
-.dchat-whisper-autocomplete-host {
+.daavy-chat-whisper-autocomplete-host {
     position: relative;
 }
 
-.dchat-whisper-autocomplete {
+.daavy-chat-whisper-autocomplete {
     position: absolute;
     left: 0;
     right: 0;
@@ -175,11 +175,11 @@
     z-index: 20;
 }
 
-.dchat-whisper-autocomplete[hidden] {
+.daavy-chat-whisper-autocomplete[hidden] {
     display: none;
 }
 
-.dchat-whisper-option {
+.daavy-chat-whisper-option {
     display: flex;
     align-items: center;
     gap: 8px;
@@ -194,14 +194,14 @@
     opacity: 0.82;
 }
 
-.dchat-whisper-option:hover,
-.dchat-whisper-option.active {
+.daavy-chat-whisper-option:hover,
+.daavy-chat-whisper-option.active {
     background: rgba(74, 144, 226, 0.16);
     background: color-mix(in srgb, var(--color-border-highlight, #4a90e2) 18%, transparent);
     opacity: 1;
 }
 
-.dchat-whisper-status {
+.daavy-chat-whisper-status {
     width: 6px;
     height: 6px;
     border-radius: 999px;
@@ -209,56 +209,56 @@
     background: rgba(255, 255, 255, 0.22);
 }
 
-.dchat-whisper-status.is-active {
+.daavy-chat-whisper-status.is-active {
     background: #54d38a;
     box-shadow: 0 0 6px rgba(84, 211, 138, 0.45);
 }
 
-.dchat-whisper-name {
+.daavy-chat-whisper-name {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
 }
 
-.chat-message.dchat-hide-damage-traits:has(.damage-roll) .flavor-text .tags[data-tooltip-class="pf2e"] {
+.chat-message.daavy-chat-hide-damage-traits:has(.damage-roll) .flavor-text .tags[data-tooltip-class="pf2e"] {
     display: none !important;
 }
 
-.chat-message.dchat-hide-damage-traits:has(.damage-roll) .flavor-text > hr:first-of-type {
+.chat-message.daavy-chat-hide-damage-traits:has(.damage-roll) .flavor-text > hr:first-of-type {
     display: none !important;
 }
 
-.chat-message.dchat-trait-filter .tags span.tag:is([data-trait], [data-slug]):not(.tag_transparent).dchat-hidden {
+.chat-message.daavy-chat-trait-filter .tags span.tag:is([data-trait], [data-slug]):not(.tag_transparent).daavy-chat-hidden {
     display: none !important;
 }
 
-.chat-message.dchat-trait-filter .tags.dchat-expanded span.tag:is([data-trait], [data-slug]):not(.tag_transparent).dchat-hidden {
+.chat-message.daavy-chat-trait-filter .tags.daavy-chat-expanded span.tag:is([data-trait], [data-slug]):not(.tag_transparent).daavy-chat-hidden {
     display: inline-flex !important;
 }
 
-.chat-message.dchat-trait-filter .tags span.tag:is([data-trait], [data-slug]):not(.tag_transparent).dchat-clickable {
+.chat-message.daavy-chat-trait-filter .tags span.tag:is([data-trait], [data-slug]):not(.tag_transparent).daavy-chat-clickable {
     cursor: pointer;
 }
 
-.chat-message.dchat-trait-filter .tags span.tag:is([data-trait], [data-slug]):not(.tag_transparent).dchat-clickable:hover {
+.chat-message.daavy-chat-trait-filter .tags span.tag:is([data-trait], [data-slug]):not(.tag_transparent).daavy-chat-clickable:hover {
     opacity: 0.8;
 }
 
-.chat-message.dchat-trait-filter .tags .tag.dchat-filtered {
+.chat-message.daavy-chat-trait-filter .tags .tag.daavy-chat-filtered {
     display: none !important;
 }
 
-.dchat-toggle-buttons {
+.daavy-chat-toggle-buttons {
     cursor: pointer;
     margin-left: 5px;
     opacity: 0.7;
 }
 
-.dchat-toggle-buttons:hover {
+.daavy-chat-toggle-buttons:hover {
     opacity: 1;
     color: #4a90e2;
 }
 
-.dchat-buttons-hidden {
+.daavy-chat-buttons-hidden {
     display: none !important;
 }

@@ -1,4 +1,4 @@
-import { error, isHookDebugEnabled } from "./debug.js";
+import { error, isDebugEnabled } from "./debug.js";
 import { CHAT_SELECTORS, MESSAGE_TYPES } from "./config.js";
 
 export class MessageClassifier {
@@ -54,7 +54,7 @@ export function getChatSection(renderedHtml) {
     return element.querySelector(CHAT_SELECTORS.SECTION);
 }
 
-export function getFoundryUtils() {
+function getFoundryUtils() {
     return globalThis.foundry?.utils ?? {};
 }
 
@@ -127,16 +127,8 @@ export function rememberMessageElement(message, renderedHtml) {
     return element;
 }
 
-export function getController(element) {
-    return getCleanupEntry(element).abortController;
-}
-
-export function abortController(element) {
-    const entry = cleanupEntries.get(element);
-    if (entry) {
-        entry.abortController.abort();
-        cleanupEntries.delete(element);
-    }
+export function getCleanupSignal(element) {
+    return getCleanupEntry(element).abortController.signal;
 }
 
 export function registerCleanup(element, cleanupFn) {
@@ -146,7 +138,7 @@ export function registerCleanup(element, cleanupFn) {
     return entry.abortController.signal;
 }
 
-export function executeCleanup(element) {
+function executeCleanup(element) {
     const entry = cleanupEntries.get(element);
     if (!entry) return;
 
@@ -156,7 +148,7 @@ export function executeCleanup(element) {
         try {
             cleanupFn();
         } catch (errorValue) {
-            if (isHookDebugEnabled()) {
+            if (isDebugEnabled()) {
                 error("Cleanup error:", errorValue);
             }
         }

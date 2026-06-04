@@ -1,79 +1,79 @@
-import { MESSAGE_TYPES } from "./config.js";
+import { HOOK_NAMES, MESSAGE_TYPES } from "./config.js";
+import { SettingsLayout } from "./settings.js";
 import { getChatSection, getElement } from "./utils.js";
+import { AutocompleteWhisper } from "./features/autocomplete-whisper.js";
+import { HideChatInitiative } from "./features/hide-chat-initiative.js";
+import { HidePrivateMessages } from "./features/hide-private-messages.js";
 import {
-    AutocompleteWhisper,
-    ChatLogManager,
+    ChatClearControls,
     ChatTabsManager,
-    HideChatInitiative,
-    HidePrivateMessages,
-    SettingsManager,
     addChatNotification,
     cleanupMessage,
     initializeFeatures,
     processFeatures,
-    refreshChatManagers,
-    scheduleChatRefreshes
+    refreshChatUi,
+    scheduleChatUiRefresh
 } from "./main.js";
 
-export function registerDchatHooks() {
-    Hooks.once("init", () => {
+export function registerDaavyChatHooks() {
+    Hooks.once(HOOK_NAMES.INIT, () => {
         initializeFeatures();
     });
 
-    Hooks.once("ready", () => {
+    Hooks.once(HOOK_NAMES.READY, () => {
         AutocompleteWhisper.onReady();
         HidePrivateMessages.onReady();
     });
 
-    Hooks.once("i18nInit", () => {
+    Hooks.once(HOOK_NAMES.I18N_INIT, () => {
         ChatTabsManager.resetLocalizedLabels();
     });
 
-    Hooks.on("renderSettingsConfig", (application, renderedHtml) => {
-        SettingsManager.groupSettings(renderedHtml);
+    Hooks.on(HOOK_NAMES.RENDER_SETTINGS_CONFIG, (_application, renderedHtml) => {
+        SettingsLayout.groupSettings(renderedHtml);
     });
 
-    Hooks.on("renderChatInput", (application, elements) => {
-        refreshChatManagers(application?.element);
+    Hooks.on(HOOK_NAMES.RENDER_CHAT_INPUT, (application, elements) => {
+        refreshChatUi(application?.element);
         AutocompleteWhisper.onRenderChatInput(application, elements);
     });
 
-    Hooks.on("renderChatLog", (application, renderedHtml) => {
+    Hooks.on(HOOK_NAMES.RENDER_CHAT_LOG, (_application, renderedHtml) => {
         const element = getElement(renderedHtml);
         ChatTabsManager.inject(element);
-        ChatLogManager.observeChatLog(element);
+        ChatClearControls.observeChatLog(element);
         AutocompleteWhisper.onRenderChatLog(element);
     });
 
-    Hooks.on("renderSidebar", (application, renderedHtml) => {
+    Hooks.on(HOOK_NAMES.RENDER_SIDEBAR, (_application, renderedHtml) => {
         const chatSection = getChatSection(renderedHtml);
         if (chatSection) ChatTabsManager.inject(chatSection);
         AutocompleteWhisper.onRenderSidebar(renderedHtml);
     });
 
-    Hooks.on("changeSidebarTab", (application) => {
+    Hooks.on(HOOK_NAMES.CHANGE_SIDEBAR_TAB, (application) => {
         if (application?.tabName !== MESSAGE_TYPES.CHAT) return;
 
-        refreshChatManagers(application?.element);
+        refreshChatUi(application?.element);
         AutocompleteWhisper.onChangeSidebarTab(application);
     });
 
-    Hooks.on("openDetachedWindow", () => {
-        scheduleChatRefreshes();
+    Hooks.on(HOOK_NAMES.OPEN_DETACHED_WINDOW, () => {
+        scheduleChatUiRefresh();
         AutocompleteWhisper.onDetachedWindowChange();
     });
 
-    Hooks.on("closeDetachedWindow", () => {
-        scheduleChatRefreshes();
+    Hooks.on(HOOK_NAMES.CLOSE_DETACHED_WINDOW, () => {
+        scheduleChatUiRefresh();
         AutocompleteWhisper.onDetachedWindowChange();
     });
 
-    Hooks.on("renderChatMessageHTML", processFeatures);
-    Hooks.on("createChatMessage", addChatNotification);
+    Hooks.on(HOOK_NAMES.RENDER_CHAT_MESSAGE_HTML, processFeatures);
+    Hooks.on(HOOK_NAMES.CREATE_CHAT_MESSAGE, addChatNotification);
 
-    Hooks.on("preCreateChatMessage", (message, creationData) => {
+    Hooks.on(HOOK_NAMES.PRE_CREATE_CHAT_MESSAGE, (message, creationData) => {
         return HideChatInitiative.preCreateChatMessage(message, creationData);
     });
 
-    Hooks.on("deleteChatMessage", cleanupMessage);
+    Hooks.on(HOOK_NAMES.DELETE_CHAT_MESSAGE, cleanupMessage);
 }
