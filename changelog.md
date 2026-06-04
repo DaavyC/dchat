@@ -1,5 +1,6 @@
 ##### 1.5.0
 - Added Hide Chat Formatting, which removes ProseMirror from chat
+- Reorganized the settings menu
 
 ##### 1.4.5
 - Added an option to restore default settings

@@ -10,22 +10,41 @@ A simple module for **Foundry VTT** that organizes the chat log into tabs and ad
 
 ## 🗂️ Features
 
-- **💬 Chat Tabs** — Splits messages into Chat, Game, and Whispers tabs.
-- **🧹 Scoped Clearing** — Lets the Game Master clear the active tab, or all tabs with SHIFT.
-- **🔒 Autocomplete Whisper** — Suggests whisper names while typing `/w` or `/whisper`.
-- **🎲 Chat Cleanup** — Hides or collapses noisy roll details when enabled.
+- **💬 Chat Tabs** — Splits messages into Chat, Game, and Whispers.
+- **🧹 Chat Clearing** — Clears the active tab or every tab with SHIFT.
+- **✍️ Message Input** — Adds whisper autocomplete and hides formatting controls.
+- **🎲 Cleaner Messages** — Hides clutter from messages, rolls, and initiative.
+- **🔒 Private Rolls** — Hides private rolls from unauthorized users.
+- **⚔️ PF2e Tools** — Hides traits, damage-roll details, and damage buttons.
+- **⚙️ Settings** — Organizes options and provides a reset button.
 
 ---
 
 ## ⚙️ Settings
 
-- **Cleaner Chat** — Hides avatars and usernames in chat headers.
-- **Compact Chat** — Applies a smaller and cleaner chat layout.
-- **Autocomplete Whisper** — Shows whisper recipient suggestions while typing.
-- **Chat Cleanup** — Hides initiative messages, private rolls, and dice formulas.
-- **PF2e Options** — Hides damage traits, extra traits, and damage buttons.
-- **Debug** — Shows module debug logs in the browser console.
-- **Reset Settings** — Restores all module settings to their defaults.
+### Settings
+
+- **Autocomplete Whisper** — Suggests names for `/w` and `/whisper`.
+- **Cleaner Chat** — Hides avatars and usernames.
+- **Collapsible Formula** — Hides formulas until clicked.
+- **Compact Chat** — Uses a compact layout.
+- **Hide Chat Formatting** — Hides formatting controls.
+- **Hide Chat Initiative** — Hides initiative messages.
+- **Hide Private Messages** — Hides unauthorized private rolls.
+
+### PF2e Only
+
+- **Hide Damage Buttons** — Hides damage buttons with a toggle.
+- **Hide Damage Traits** — Hides damage-roll traits.
+- **Trait Filter** — Filters traits and shows up to three.
+
+### Advanced
+
+- **Debug** — Shows debug logs.
+
+### Reset
+
+- **Reset Settings** — Restores default settings.
 
 ---
 

@@ -39,18 +39,18 @@ export const SETTING_KEYS = {
 
 export const SETTING_GROUPS = {
     Settings: [
+        SETTING_KEYS.AUTOCOMPLETE_WHISPER,
         SETTING_KEYS.CLEANER_CHAT,
-        SETTING_KEYS.HIDE_CHAT_FORMATTING,
         SETTING_KEYS.COLLAPSIBLE_FORMULA,
         SETTING_KEYS.COMPACT_CHAT,
-        SETTING_KEYS.AUTOCOMPLETE_WHISPER,
+        SETTING_KEYS.HIDE_CHAT_FORMATTING,
         SETTING_KEYS.HIDE_CHAT_INITIATIVE,
         SETTING_KEYS.HIDE_PRIVATE_MESSAGES
     ],
     PF2eOnly: [
+        SETTING_KEYS.HIDE_DAMAGE_BUTTONS,
         SETTING_KEYS.HIDE_DAMAGE_TRAITS,
-        SETTING_KEYS.TRAIT_FILTER,
-        SETTING_KEYS.HIDE_DAMAGE_BUTTONS
+        SETTING_KEYS.TRAIT_FILTER
     ],
     Advanced: [
         SETTING_KEYS.DEBUG
@@ -103,7 +103,9 @@ export const SETTING_DEFINITIONS = {
     },
     [SETTING_KEYS.DEBUG]: {
         name: "daavy-chat.Settings.Debug.Name",
-        hint: "daavy-chat.Settings.Debug.Hint"
+        hint: "daavy-chat.Settings.Debug.Hint",
+        scope: "world",
+        restricted: true
     }
 };
 
