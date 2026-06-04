@@ -1,5 +1,4 @@
-export const MODULE_TITLE = "Daavy's Chat";
-export const MODULE_ID = globalThis.game?.modules?.find(module => module.title === MODULE_TITLE)?.id ?? "daavy-chat";
+export const MODULE_ID = "dchat";
 
 export const MESSAGE_TYPES = {
     CHAT: "chat",
@@ -26,6 +25,7 @@ export const HOOK_NAMES = {
 
 export const SETTING_KEYS = {
     CLEANER_CHAT: "cleanerChat",
+    HIDE_CHAT_FORMATTING: "hideChatFormatting",
     COLLAPSIBLE_FORMULA: "collapsibleFormula",
     COMPACT_CHAT: "compactChat",
     AUTOCOMPLETE_WHISPER: "autocompleteWhisper",
@@ -40,6 +40,7 @@ export const SETTING_KEYS = {
 export const SETTING_GROUPS = {
     Settings: [
         SETTING_KEYS.CLEANER_CHAT,
+        SETTING_KEYS.HIDE_CHAT_FORMATTING,
         SETTING_KEYS.COLLAPSIBLE_FORMULA,
         SETTING_KEYS.COMPACT_CHAT,
         SETTING_KEYS.AUTOCOMPLETE_WHISPER,
@@ -60,6 +61,10 @@ export const SETTING_DEFINITIONS = {
     [SETTING_KEYS.CLEANER_CHAT]: {
         name: "daavy-chat.Settings.cleanerChat.Name",
         hint: "daavy-chat.Settings.cleanerChat.Hint"
+    },
+    [SETTING_KEYS.HIDE_CHAT_FORMATTING]: {
+        name: "daavy-chat.Settings.HideChatFormatting.Name",
+        hint: "daavy-chat.Settings.HideChatFormatting.Hint"
     },
     [SETTING_KEYS.COLLAPSIBLE_FORMULA]: {
         name: "daavy-chat.Settings.CollapsibleFormula.Name",
@@ -200,7 +205,12 @@ export const CLEANER_CHAT_SELECTORS = {
 };
 
 export const CLEANER_CHAT_CLASSES = {
-    SHOW_FORMULA: "daavy-chat-show"
+    SHOW_FORMULA: "daavy-chat-show",
+    HIDE_CHAT_FORMATTING: "daavy-chat-hide-chat-formatting"
+};
+
+export const CHAT_EDITOR_SELECTORS = {
+    PROSE_MIRROR: "prose-mirror[name='message']"
 };
 
 export const AUTOCOMPLETE_WHISPER = {

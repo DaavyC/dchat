@@ -1,6 +1,8 @@
 {
   "daavy-chat.Settings.cleanerChat.Name": "Cleaner Chat",
   "daavy-chat.Settings.cleanerChat.Hint": "Hide avatars and usernames in chat headers.",
+  "daavy-chat.Settings.HideChatFormatting.Name": "Hide Chat Formatting",
+  "daavy-chat.Settings.HideChatFormatting.Hint": "Hide the ProseMirror formatting toolbar in chat.",
   "daavy-chat.Settings.compactChat.Name": "Compact Chat",
   "daavy-chat.Settings.compactChat.Hint": "Apply a more compact chat layout.",
   "daavy-chat.Settings.autocompleteWhisper.Name": "Autocomplete Whisper",

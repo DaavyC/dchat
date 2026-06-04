@@ -118,6 +118,19 @@
     display: none !important;
 }
 
+prose-mirror.daavy-chat-hide-chat-formatting menu {
+    display: none !important;
+}
+
+prose-mirror.daavy-chat-hide-chat-formatting {
+    flex-basis: var(--chat-input-height) !important;
+    gap: 0 !important;
+}
+
+prose-mirror.daavy-chat-hide-chat-formatting > .menu-container {
+    display: none !important;
+}
+
 .chat-message.daavy-chat-compact-chat header,
 .chat-message.daavy-chat-compact-chat .message-header {
     display: flex !important;

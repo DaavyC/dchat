@@ -2,6 +2,7 @@ import { HOOK_NAMES, MESSAGE_TYPES } from "./config.js";
 import { SettingsLayout } from "./settings.js";
 import { getChatSection, getElement } from "./utils.js";
 import { AutocompleteWhisper } from "./features/autocomplete-whisper.js";
+import { HideChatFormatting } from "./features/cleaner-chat.js";
 import { HideChatInitiative } from "./features/hide-chat-initiative.js";
 import { HidePrivateMessages } from "./features/hide-private-messages.js";
 import {
@@ -36,18 +37,21 @@ export function registerDaavyChatHooks() {
     Hooks.on(HOOK_NAMES.RENDER_CHAT_INPUT, (application, elements) => {
         refreshChatUi(application?.element);
         AutocompleteWhisper.onRenderChatInput(application, elements);
+        HideChatFormatting.onRenderChatInput(application, elements);
     });
 
     Hooks.on(HOOK_NAMES.RENDER_CHAT_LOG, (_application, renderedHtml) => {
         const element = getElement(renderedHtml);
         ChatTabsManager.inject(element);
         ChatClearControls.observeChatLog(element);
+        HideChatFormatting.observe(element);
         AutocompleteWhisper.onRenderChatLog(element);
     });
 
     Hooks.on(HOOK_NAMES.RENDER_SIDEBAR, (_application, renderedHtml) => {
         const chatSection = getChatSection(renderedHtml);
         if (chatSection) ChatTabsManager.inject(chatSection);
+        HideChatFormatting.observe(chatSection);
         AutocompleteWhisper.onRenderSidebar(renderedHtml);
     });
 
@@ -55,6 +59,7 @@ export function registerDaavyChatHooks() {
         if (application?.tabName !== MESSAGE_TYPES.CHAT) return;
 
         refreshChatUi(application?.element);
+        HideChatFormatting.refresh(application?.element);
         AutocompleteWhisper.onChangeSidebarTab(application);
     });
 
