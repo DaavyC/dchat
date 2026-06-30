@@ -6,23 +6,6 @@ export const MESSAGE_TYPES = {
     WHISPER: "whisper",
 };
 
-export const HOOK_NAMES = {
-    INIT: "init",
-    READY: "ready",
-    I18N_INIT: "i18nInit",
-    RENDER_SETTINGS_CONFIG: "renderSettingsConfig",
-    RENDER_CHAT_INPUT: "renderChatInput",
-    RENDER_CHAT_LOG: "renderChatLog",
-    RENDER_SIDEBAR: "renderSidebar",
-    CHANGE_SIDEBAR_TAB: "changeSidebarTab",
-    OPEN_DETACHED_WINDOW: "openDetachedWindow",
-    CLOSE_DETACHED_WINDOW: "closeDetachedWindow",
-    RENDER_CHAT_MESSAGE_HTML: "renderChatMessageHTML",
-    CREATE_CHAT_MESSAGE: "createChatMessage",
-    PRE_CREATE_CHAT_MESSAGE: "preCreateChatMessage",
-    DELETE_CHAT_MESSAGE: "deleteChatMessage"
-};
-
 export const SETTING_KEYS = {
     CLEANER_CHAT: "cleanerChat",
     HIDE_CHAT_FORMATTING: "hideChatFormatting",
@@ -153,10 +136,6 @@ export const CHAT_DATA = {
     TYPE: "daavy-chat-type"
 };
 
-export const CHAT_SELECTOR_FACTORIES = {
-    TAB_BUTTON_BY_ID: (tabId) => `.${CHAT_CLASSES.TAB_BUTTON}[data-daavy-chat-tab="${tabId}"]`
-};
-
 export const CHAT_I18N = {
     TABS_ALL: "daavy-chat.Tabs.All",
     TABS_CHAT: "daavy-chat.Tabs.Chat",
@@ -199,8 +178,6 @@ export const RESET_DIALOG = {
 };
 
 export const CLEANER_CHAT_SELECTORS = {
-    AVATARS: "header img, .message-header img, .message-portrait, [class*='portrait']",
-    USERS: "header span.user, .message-header span.user",
     ROLL_TITLE: ".dice-roll h4",
     ROLL: ".dice-roll",
     FORMULA: ".dice-formula"
@@ -222,8 +199,6 @@ export const AUTOCOMPLETE_WHISPER = {
     EDITABLE_SELECTOR: ".editor-content[contenteditable='true'], [contenteditable='true']",
     MAX_RESULTS: 6,
     STARTUP_REFRESH_DELAYS_MS: [0, 150, 500, 1200, 2500, 5000],
-    BOOTSTRAP_INTERVAL_MS: 500,
-    MAX_BOOTSTRAP_ATTEMPTS: 20,
     CARET_NAVIGATION_KEYS: ["ArrowLeft", "ArrowRight", "Home", "End"],
     DEFAULT_ASSISTANT_ROLE: 3,
     DEFAULT_GM_ROLE: 4,
@@ -249,9 +224,6 @@ export const AUTOCOMPLETE_WHISPER = {
 };
 
 export const PF2E_SELECTORS = {
-    DAMAGE_ROLL: ".damage-roll",
-    DAMAGE_TRAITS: '.flavor-text .tags[data-tooltip-class="pf2e"]',
-    DAMAGE_TRAITS_SEPARATOR: ".flavor-text > hr:first-of-type",
     TRAIT_TAGS: '.tags .tag:is([data-trait], [data-slug]):not(.tag_transparent)[data-tooltip]',
     TRAIT_CONTAINERS: ".tags",
     VISIBLE_TRAIT_TAGS: "span.tag:is([data-trait], [data-slug]):not(.tag_transparent)",

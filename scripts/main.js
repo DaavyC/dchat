@@ -3,7 +3,6 @@ import {
     CHAT_CLASSES,
     CHAT_DATA,
     CHAT_I18N,
-    CHAT_SELECTOR_FACTORIES,
     CHAT_SELECTORS,
     CHAT_TAB_CONFIG,
     FEATURE_CLASSES,
@@ -12,9 +11,9 @@ import {
 import { isSettingEnabled, registerModuleSettings } from "./settings.js";
 import { MessageClassifier, cleanupDeletedMessage, getDocument, getElement, rememberMessageElement } from "./utils.js";
 import { AutocompleteWhisper } from "./features/autocomplete-whisper.js";
-import { CleanerChat, CollapsibleFormula } from "./features/cleaner-chat.js";
+import { CollapsibleFormula } from "./features/cleaner-chat.js";
 import { HidePrivateMessages } from "./features/hide-private-messages.js";
-import { HideDamageButtons, HideDamageTraits, TraitFilter } from "./features/pf2e-only.js";
+import { HideDamageButtons, TraitFilter } from "./features/pf2e-only.js";
 
 export class ChatClearControls {
     static _observers = new WeakMap();
@@ -260,7 +259,7 @@ export class ChatTabsManager {
         this.unreadTabs.add(tabId);
 
         for (const container of this._getTrackedContainers()) {
-            container.querySelectorAll(CHAT_SELECTOR_FACTORIES.TAB_BUTTON_BY_ID(tabId)).forEach(button => {
+            container.querySelectorAll(`.${CHAT_CLASSES.TAB_BUTTON}[data-daavy-chat-tab="${tabId}"]`).forEach(button => {
                 this._ensurePip(button);
             });
         }
@@ -356,8 +355,8 @@ export class ChatTabsManager {
 }
 
 const MESSAGE_FEATURES = [
-    { handler: CleanerChat, setting: SETTING_KEYS.CLEANER_CHAT, css: FEATURE_CLASSES.CLEANER_CHAT },
-    { handler: HideDamageTraits, setting: SETTING_KEYS.HIDE_DAMAGE_TRAITS, css: FEATURE_CLASSES.HIDE_DAMAGE_TRAITS },
+    { setting: SETTING_KEYS.CLEANER_CHAT, css: FEATURE_CLASSES.CLEANER_CHAT },
+    { setting: SETTING_KEYS.HIDE_DAMAGE_TRAITS, css: FEATURE_CLASSES.HIDE_DAMAGE_TRAITS },
     { handler: TraitFilter, setting: SETTING_KEYS.TRAIT_FILTER, css: FEATURE_CLASSES.TRAIT_FILTER },
     { handler: CollapsibleFormula, setting: SETTING_KEYS.COLLAPSIBLE_FORMULA, css: FEATURE_CLASSES.COLLAPSIBLE_FORMULA },
     { setting: SETTING_KEYS.COMPACT_CHAT, css: FEATURE_CLASSES.COMPACT_CHAT },

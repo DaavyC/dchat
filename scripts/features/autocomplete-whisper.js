@@ -6,18 +6,15 @@ export class AutocompleteWhisper {
     static _trackedHosts = new Set();
     static _states = new WeakMap();
     static _boundFocusDocuments = new WeakSet();
-    static _bootstrapWatcher = null;
-    static _bootstrapAttempts = 0;
 
     static init() {
         this._scheduleStartupRefreshes();
-        this._startBootstrapWatcher();
         this._bindGlobalFocusListener();
     }
 
     static onReady() {
         this._bindGlobalFocusListener();
-        this._scheduleStartupRefreshes();
+        this._scheduleRefresh();
     }
 
     static onRenderChatInput(application, elements) {
@@ -51,19 +48,6 @@ export class AutocompleteWhisper {
         for (const delayMs of AUTOCOMPLETE_WHISPER.STARTUP_REFRESH_DELAYS_MS) {
             globalThis.setTimeout(() => this._scheduleRefresh(), delayMs);
         }
-    }
-
-    static _startBootstrapWatcher() {
-        if (this._bootstrapWatcher) return;
-
-        this._bootstrapAttempts = 0;
-        this._bootstrapWatcher = globalThis.setInterval(() => {
-            this._bootstrapAttempts += 1;
-            if (this.refresh() || this._bootstrapAttempts >= AUTOCOMPLETE_WHISPER.MAX_BOOTSTRAP_ATTEMPTS) {
-                globalThis.clearInterval(this._bootstrapWatcher);
-                this._bootstrapWatcher = null;
-            }
-        }, AUTOCOMPLETE_WHISPER.BOOTSTRAP_INTERVAL_MS);
     }
 
     static _bindGlobalFocusListener() {

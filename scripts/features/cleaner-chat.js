@@ -7,16 +7,6 @@ import {
 import { isSettingEnabled } from "../settings.js";
 import { getElement, registerCleanup } from "../utils.js";
 
-export class CleanerChat {
-    static processMessage(_message, renderedHtml) {
-        const messageElement = getElement(renderedHtml);
-        if (!messageElement) return;
-
-        messageElement.querySelectorAll(CLEANER_CHAT_SELECTORS.AVATARS).forEach(avatarElement => avatarElement.style.display = "none");
-        messageElement.querySelectorAll(CLEANER_CHAT_SELECTORS.USERS).forEach(userElement => userElement.style.display = "none");
-    }
-}
-
 export class HideChatFormatting {
     static _observers = new WeakMap();
 

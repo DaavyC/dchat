@@ -1,18 +1,6 @@
 import { PF2E_CLASSES, PF2E_DATA, PF2E_I18N, PF2E_ICONS, PF2E_LIMITS, PF2E_SELECTORS, PF2E_TRAITS_TO_HIDE } from "../config.js";
-import { getCleanupSignal, getDocument, getElement, isCurrentUserAuthor } from "../utils.js";
+import { getCleanupSignal, getDocument, getElement, isCurrentUserAuthor, registerCleanup } from "../utils.js";
 import { log } from "../debug.js";
-
-export class HideDamageTraits {
-    static processMessage(_message, renderedHtml) {
-        const messageElement = getElement(renderedHtml);
-        if (!messageElement || !messageElement.querySelector(PF2E_SELECTORS.DAMAGE_ROLL)) return;
-
-        messageElement.querySelectorAll(PF2E_SELECTORS.DAMAGE_TRAITS).forEach(trait => trait.style.display = "none");
-
-        const separator = messageElement.querySelector(PF2E_SELECTORS.DAMAGE_TRAITS_SEPARATOR);
-        if (separator) separator.style.display = "none";
-    }
-}
 
 export class TraitFilter {
     static processMessage(_message, renderedHtml) {
