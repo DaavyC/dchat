@@ -1,5 +1,5 @@
-import { AUTOCOMPLETE_WHISPER, MESSAGE_TYPES, SETTING_KEYS } from "../config.js";
-import { createAbortController, getChatSection, getDocument, getElement, randomId, removeAttributes } from "../utils.js";
+import { AUTOCOMPLETE_WHISPER, SETTING_KEYS } from "../config.js";
+import { createAbortController, getDocument, getElement, randomId, removeAttributes } from "../utils.js";
 import { isSettingEnabled } from "../settings.js";
 
 export class AutocompleteWhisper {
@@ -8,8 +8,8 @@ export class AutocompleteWhisper {
     static _boundFocusDocuments = new WeakSet();
 
     static init() {
-        this._scheduleStartupRefreshes();
         this._bindGlobalFocusListener();
+        this._scheduleRefresh();
     }
 
     static onReady() {
@@ -17,37 +17,11 @@ export class AutocompleteWhisper {
         this._scheduleRefresh();
     }
 
-    static onRenderChatInput(application, elements) {
-        this.refresh(application?.element, elements);
-    }
-
-    static onRenderChatLog(renderedHtml) {
-        this.refresh(getElement(renderedHtml));
-    }
-
-    static onRenderSidebar(renderedHtml) {
-        this.refresh(getChatSection(renderedHtml));
-    }
-
-    static onChangeSidebarTab(application) {
-        if (application?.tabName === MESSAGE_TYPES.CHAT) this.refresh(application?.element);
-    }
-
-    static onDetachedWindowChange() {
-        this._scheduleStartupRefreshes();
-    }
-
     static _scheduleRefresh() {
         requestAnimationFrame(() => {
             this._bindGlobalFocusListener();
             this.refresh();
         });
-    }
-
-    static _scheduleStartupRefreshes() {
-        for (const delayMs of AUTOCOMPLETE_WHISPER.STARTUP_REFRESH_DELAYS_MS) {
-            globalThis.setTimeout(() => this._scheduleRefresh(), delayMs);
-        }
     }
 
     static _bindGlobalFocusListener() {

@@ -16,9 +16,8 @@ export class HidePrivateMessages {
         const originalNotify = ChatLogClass?.prototype?.notify;
         if (typeof originalNotify !== "function") return;
 
-        const hidePrivateMessages = this;
         ChatLogClass.prototype.notify = function (message, options) {
-            if (isSettingEnabled(SETTING_KEYS.HIDE_PRIVATE_MESSAGES) && hidePrivateMessages.shouldHideMessage(message)) return;
+            if (isSettingEnabled(SETTING_KEYS.HIDE_PRIVATE_MESSAGES) && HidePrivateMessages.shouldHideMessage(message)) return;
             return originalNotify.call(this, message, options);
         };
 

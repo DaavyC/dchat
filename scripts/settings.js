@@ -1,14 +1,17 @@
 import {
     MODULE_ID,
-    RESET_DIALOG,
     SETTING_DEFINITIONS,
-    SETTING_GROUPS,
-    SETTINGS_CLASSES,
-    SETTINGS_I18N,
-    SETTINGS_SELECTOR_FACTORIES,
-    SETTINGS_SELECTORS
+    SETTING_GROUPS
 } from "./config.js";
 import { getDocument, getElement } from "./utils.js";
+
+const SETTINGS_CLASSES = {
+    ROW: "daavy-chat-settings-row",
+    GROUP: "daavy-chat-settings-group",
+    GROUP_TITLE: "daavy-chat-settings-group-title"
+};
+const SETTINGS_GROUP_PREFIX = "daavy-chat.Settings.Groups";
+const RESET_DIALOG_PREFIX = "daavy-chat.Settings.Reset";
 
 export class SettingsLayout {
     static groupSettings(renderedHtml) {
@@ -43,7 +46,7 @@ export class SettingsLayout {
         fieldset.className = SETTINGS_CLASSES.GROUP;
 
         const legend = documentRef.createElement("legend");
-        legend.textContent = game.i18n.localize(`${SETTINGS_I18N.GROUP_PREFIX}.${groupKey}`);
+        legend.textContent = game.i18n.localize(`${SETTINGS_GROUP_PREFIX}.${groupKey}`);
         legend.className = SETTINGS_CLASSES.GROUP_TITLE;
         fieldset.appendChild(legend);
 
@@ -52,8 +55,8 @@ export class SettingsLayout {
 
     static _findSettingRow(container, key) {
         const settingId = `${MODULE_ID}.${key}`;
-        return container.querySelector(SETTINGS_SELECTOR_FACTORIES.ROW(settingId))?.closest(SETTINGS_SELECTORS.FORM_GROUP)
-            ?? container.querySelector(SETTINGS_SELECTOR_FACTORIES.INPUT(settingId))?.closest(SETTINGS_SELECTORS.FORM_GROUP)
+        return container.querySelector(`[data-setting-id="${settingId}"]`)?.closest(".form-group")
+            ?? container.querySelector(`[id$="${settingId}"]`)?.closest(".form-group")
             ?? null;
     }
 
@@ -71,10 +74,10 @@ export function registerModuleSettings() {
 }
 
 function registerResetMenu() {
-    game.settings.registerMenu(MODULE_ID, RESET_DIALOG.MENU_KEY, {
-        name: `${RESET_DIALOG.I18N_PREFIX}.Name`,
-        hint: `${RESET_DIALOG.I18N_PREFIX}.Hint`,
-        icon: RESET_DIALOG.MENU_ICON,
+    game.settings.registerMenu(MODULE_ID, "resetSettings", {
+        name: `${RESET_DIALOG_PREFIX}.Name`,
+        hint: `${RESET_DIALOG_PREFIX}.Hint`,
+        icon: "fas fa-layer-group",
         type: ResetSettingsDialog,
         restricted: true
     });
@@ -108,7 +111,7 @@ async function confirmResetSettings(app = game.settings.sheet) {
     await resetSettingsToDefaults(app);
 }
 
-export class ResetSettingsDialog extends (globalThis.FormApplication ?? class {}) {
+class ResetSettingsDialog extends (globalThis.FormApplication ?? class {}) {
     render() {
         return confirmResetSettings(game.settings.sheet);
     }
@@ -135,20 +138,20 @@ function getResetDialogOptions() {
         window: { title: localizeReset("Title") },
         content: `<p>${localizeReset("Content")}</p>`,
         yes: {
-            action: RESET_DIALOG.YES_ACTION,
-            icon: RESET_DIALOG.YES_ICON,
+            action: "yes",
+            icon: "fa-solid fa-check",
             label: localizeReset("Yes")
         },
         no: {
-            action: RESET_DIALOG.NO_ACTION,
-            icon: RESET_DIALOG.NO_ICON,
+            action: "no",
+            icon: "fa-solid fa-xmark",
             label: localizeReset("No")
         }
     };
 }
 
 function localizeReset(key) {
-    return game.i18n.localize(`${RESET_DIALOG.I18N_PREFIX}.Confirm.${key}`);
+    return game.i18n.localize(`${RESET_DIALOG_PREFIX}.Confirm.${key}`);
 }
 
 function getSettingDefault(options) {

@@ -164,6 +164,11 @@ prose-mirror.daavy-chat-hide-chat-formatting > .menu-container {
     opacity: 0.8;
 }
 
+.chat-message.daavy-chat-collapsible-formula .dice-roll h4 {
+    cursor: pointer;
+    user-select: none;
+}
+
 .daavy-chat-whisper-autocomplete-host {
     position: relative;
 }

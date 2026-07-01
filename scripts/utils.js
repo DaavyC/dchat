@@ -1,28 +1,24 @@
 import { error, isDebugEnabled } from "./debug.js";
 import { CHAT_SELECTORS, MESSAGE_TYPES } from "./config.js";
 
-export class MessageClassifier {
-    static TABS = MESSAGE_TYPES;
+export function classifyMessage(message = {}) {
+    const flags = message.flags?.pf2e ?? {};
 
-    static classify(message = {}) {
-        const flags = message.flags?.pf2e ?? {};
+    const isSystem = !!(flags.context || flags.origin || flags.item);
+    const isDiceRoll = message.isRoll || (message.rolls?.length > 0);
+    const isPf2eDamage = !!(flags.appliedDamage || flags.damageRoll?.outcomes);
+    const isDamageReaction = /damage-(taken|received)/.test(message.flavor || "") ||
+        flags.context?.type === "damage-taken";
 
-        const isSystem = !!(flags.context || flags.origin || flags.item);
-        const isDiceRoll = message.isRoll || (message.rolls?.length > 0);
-        const isPf2eDamage = !!(flags.appliedDamage || flags.damageRoll?.outcomes);
-        const isDamageReaction = /damage-(taken|received)/.test(message.flavor || "") ||
-            flags.context?.type === "damage-taken";
-
-        if (isSystem || isDiceRoll || isPf2eDamage || isDamageReaction) {
-            return this.TABS.GAME;
-        }
-
-        if (message.whisper?.length > 0 || message.blind) {
-            return this.TABS.WHISPER;
-        }
-
-        return this.TABS.CHAT;
+    if (isSystem || isDiceRoll || isPf2eDamage || isDamageReaction) {
+        return MESSAGE_TYPES.GAME;
     }
+
+    if (message.whisper?.length > 0 || message.blind) {
+        return MESSAGE_TYPES.WHISPER;
+    }
+
+    return MESSAGE_TYPES.CHAT;
 }
 
 function isElement(candidateElement) {
@@ -117,7 +113,7 @@ function getTrackedMessageElements(messageId) {
 
 export function rememberMessageElement(message, renderedHtml) {
     const element = getElement(renderedHtml);
-    const messageId = message?.id ?? message;
+    const messageId = message?.id;
     if (!element || !messageId) return element;
 
     const tracked = getTrackedMessageElements(messageId) ?? new Set();
@@ -127,13 +123,9 @@ export function rememberMessageElement(message, renderedHtml) {
     return element;
 }
 
-export function getCleanupSignal(element) {
-    return getCleanupEntry(element).abortController.signal;
-}
-
-export function registerCleanup(element, cleanupFn) {
+export function registerCleanup(element, cleanupFn = null) {
     const entry = getCleanupEntry(element);
-    entry.cleanups.push(cleanupFn);
+    if (cleanupFn) entry.cleanups.push(cleanupFn);
 
     return entry.abortController.signal;
 }

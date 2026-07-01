@@ -1,11 +1,13 @@
-import {
-    CHAT_EDITOR_SELECTORS,
-    CLEANER_CHAT_CLASSES,
-    CLEANER_CHAT_SELECTORS,
-    SETTING_KEYS
-} from "../config.js";
+import { SETTING_KEYS } from "../config.js";
 import { isSettingEnabled } from "../settings.js";
 import { getElement, registerCleanup } from "../utils.js";
+
+const PROSE_MIRROR_SELECTOR = "prose-mirror[name='message']";
+const HIDE_CHAT_FORMATTING_CLASS = "daavy-chat-hide-chat-formatting";
+const SHOW_FORMULA_CLASS = "daavy-chat-show";
+const ROLL_SELECTOR = ".dice-roll";
+const ROLL_TITLE_SELECTOR = ".dice-roll h4";
+const FORMULA_SELECTOR = ".dice-formula";
 
 export class HideChatFormatting {
     static _observers = new WeakMap();
@@ -32,7 +34,7 @@ export class HideChatFormatting {
         renderedRoots
             .flatMap(getRenderedElements)
             .flatMap(findChatEditors)
-            .forEach(editor => editor.classList.toggle(CLEANER_CHAT_CLASSES.HIDE_CHAT_FORMATTING, shouldHideFormatting));
+            .forEach(editor => editor.classList.toggle(HIDE_CHAT_FORMATTING_CLASS, shouldHideFormatting));
     }
 }
 
@@ -43,8 +45,8 @@ function getRenderedElements(renderedRoot) {
 }
 
 function findChatEditors(rootElement) {
-    const editors = Array.from(rootElement.querySelectorAll(CHAT_EDITOR_SELECTORS.PROSE_MIRROR));
-    if (rootElement.matches?.(CHAT_EDITOR_SELECTORS.PROSE_MIRROR)) editors.unshift(rootElement);
+    const editors = Array.from(rootElement.querySelectorAll(PROSE_MIRROR_SELECTOR));
+    if (rootElement.matches?.(PROSE_MIRROR_SELECTOR)) editors.unshift(rootElement);
     return editors;
 }
 
@@ -53,22 +55,15 @@ export class CollapsibleFormula {
         const messageElement = getElement(renderedHtml);
         if (!messageElement) return;
 
-        const signal = registerCleanup(messageElement, () => {
-            messageElement.querySelectorAll(CLEANER_CHAT_SELECTORS.ROLL_TITLE).forEach(title => {
-                title.style.cursor = "";
-                title.style.userSelect = "";
-            });
-        });
+        const signal = registerCleanup(messageElement);
 
-        messageElement.querySelectorAll(CLEANER_CHAT_SELECTORS.ROLL).forEach(roll => {
-            const title = roll.querySelector(CLEANER_CHAT_SELECTORS.ROLL_TITLE);
-            const formula = roll.querySelector(CLEANER_CHAT_SELECTORS.FORMULA);
+        messageElement.querySelectorAll(ROLL_SELECTOR).forEach(roll => {
+            const title = roll.querySelector(ROLL_TITLE_SELECTOR);
+            const formula = roll.querySelector(FORMULA_SELECTOR);
             if (title && formula) {
-                title.style.cursor = "pointer";
-                title.style.userSelect = "none";
                 title.addEventListener("click", (event) => {
                     event.stopPropagation();
-                    formula.classList.toggle(CLEANER_CHAT_CLASSES.SHOW_FORMULA);
+                    formula.classList.toggle(SHOW_FORMULA_CLASS);
                 }, { signal });
             }
         });

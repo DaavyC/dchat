@@ -36,7 +36,7 @@ export function registerDaavyChatHooks() {
 
     Hooks.on("renderChatInput", (application, elements) => {
         refreshChatUi(application?.element);
-        AutocompleteWhisper.onRenderChatInput(application, elements);
+        AutocompleteWhisper.refresh(application?.element, elements);
         HideChatFormatting.onRenderChatInput(application, elements);
     });
 
@@ -45,14 +45,14 @@ export function registerDaavyChatHooks() {
         ChatTabsManager.inject(element);
         ChatClearControls.observeChatLog(element);
         HideChatFormatting.observe(element);
-        AutocompleteWhisper.onRenderChatLog(element);
+        AutocompleteWhisper.refresh(element);
     });
 
     Hooks.on("renderSidebar", (_application, renderedHtml) => {
         const chatSection = getChatSection(renderedHtml);
         if (chatSection) ChatTabsManager.inject(chatSection);
         HideChatFormatting.observe(chatSection);
-        AutocompleteWhisper.onRenderSidebar(renderedHtml);
+        AutocompleteWhisper.refresh(chatSection);
     });
 
     Hooks.on("changeSidebarTab", (application) => {
@@ -60,18 +60,16 @@ export function registerDaavyChatHooks() {
 
         refreshChatUi(application?.element);
         HideChatFormatting.refresh(application?.element);
-        AutocompleteWhisper.onChangeSidebarTab(application);
+        AutocompleteWhisper.refresh(application?.element);
     });
 
-    Hooks.on("openDetachedWindow", () => {
+    const refreshDetachedChat = () => {
         scheduleChatUiRefresh();
-        AutocompleteWhisper.onDetachedWindowChange();
-    });
+        AutocompleteWhisper.refresh();
+    };
 
-    Hooks.on("closeDetachedWindow", () => {
-        scheduleChatUiRefresh();
-        AutocompleteWhisper.onDetachedWindowChange();
-    });
+    Hooks.on("openDetachedWindow", refreshDetachedChat);
+    Hooks.on("closeDetachedWindow", refreshDetachedChat);
 
     Hooks.on("renderChatMessageHTML", processFeatures);
     Hooks.on("createChatMessage", addChatNotification);

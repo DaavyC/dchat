@@ -1,15 +1,15 @@
 import {
-    CHAT_BATCH_SIZE,
     CHAT_CLASSES,
     CHAT_DATA,
     CHAT_I18N,
     CHAT_SELECTORS,
     CHAT_TAB_CONFIG,
     FEATURE_CLASSES,
+    MESSAGE_TYPES,
     SETTING_KEYS
 } from "./config.js";
 import { isSettingEnabled, registerModuleSettings } from "./settings.js";
-import { MessageClassifier, cleanupDeletedMessage, getDocument, getElement, rememberMessageElement } from "./utils.js";
+import { classifyMessage, cleanupDeletedMessage, getDocument, getElement, rememberMessageElement } from "./utils.js";
 import { AutocompleteWhisper } from "./features/autocomplete-whisper.js";
 import { CollapsibleFormula } from "./features/cleaner-chat.js";
 import { HidePrivateMessages } from "./features/hide-private-messages.js";
@@ -130,7 +130,7 @@ export class ChatClearControls {
 
     static _getMessagesToClear(clearAll) {
         if (clearAll) return game.messages.contents;
-        return game.messages.filter(message => MessageClassifier.classify(message) === ChatTabsManager.activeTab);
+        return game.messages.filter(message => classifyMessage(message) === ChatTabsManager.activeTab);
     }
 
     static _confirmClear(tabLabel, messageCount) {
@@ -143,8 +143,8 @@ export class ChatClearControls {
     }
 
     static async _deleteInBatches(messageIds) {
-        for (let batchStartIndex = 0; batchStartIndex < messageIds.length; batchStartIndex += CHAT_BATCH_SIZE) {
-            await ChatMessage.deleteDocuments(messageIds.slice(batchStartIndex, batchStartIndex + CHAT_BATCH_SIZE));
+        for (let batchStartIndex = 0; batchStartIndex < messageIds.length; batchStartIndex += 100) {
+            await ChatMessage.deleteDocuments(messageIds.slice(batchStartIndex, batchStartIndex + 100));
         }
     }
 }
@@ -152,7 +152,7 @@ export class ChatClearControls {
 export class ChatTabsManager {
     static _localizedLabels = null;
     static _chatContainers = new Set();
-    static activeTab = MessageClassifier.TABS.CHAT;
+    static activeTab = MESSAGE_TYPES.CHAT;
     static unreadTabs = new Set();
 
     static getLocalizedLabels() {
@@ -269,7 +269,7 @@ export class ChatTabsManager {
         container.querySelectorAll(CHAT_SELECTORS.MESSAGE_ID).forEach(messageElement => {
             const message = game.messages.get(messageElement.dataset.messageId);
             if (message) {
-                messageElement.setAttribute(`data-${CHAT_DATA.TYPE}`, MessageClassifier.classify(message));
+                messageElement.setAttribute(`data-${CHAT_DATA.TYPE}`, classifyMessage(message));
             }
         });
     }
@@ -323,7 +323,7 @@ export class ChatTabsManager {
     }
 
     static _applyFilterClass(container, messageList, tabId) {
-        const filterClasses = Object.values(MessageClassifier.TABS).map(tab => `${CHAT_CLASSES.FILTER_PREFIX}-${tab}`);
+        const filterClasses = Object.values(MESSAGE_TYPES).map(tab => `${CHAT_CLASSES.FILTER_PREFIX}-${tab}`);
         for (const element of [container, messageList]) {
             element.classList.remove(...filterClasses);
             element.classList.add(`${CHAT_CLASSES.FILTER_PREFIX}-${tabId}`);
@@ -354,29 +354,28 @@ export class ChatTabsManager {
     }
 }
 
-const MESSAGE_FEATURES = [
+const messageFeatures = [
     { setting: SETTING_KEYS.CLEANER_CHAT, css: FEATURE_CLASSES.CLEANER_CHAT },
     { setting: SETTING_KEYS.HIDE_DAMAGE_TRAITS, css: FEATURE_CLASSES.HIDE_DAMAGE_TRAITS },
     { handler: TraitFilter, setting: SETTING_KEYS.TRAIT_FILTER, css: FEATURE_CLASSES.TRAIT_FILTER },
     { handler: CollapsibleFormula, setting: SETTING_KEYS.COLLAPSIBLE_FORMULA, css: FEATURE_CLASSES.COLLAPSIBLE_FORMULA },
     { setting: SETTING_KEYS.COMPACT_CHAT, css: FEATURE_CLASSES.COMPACT_CHAT },
-    { handler: AutocompleteWhisper, setting: SETTING_KEYS.AUTOCOMPLETE_WHISPER },
     { handler: HidePrivateMessages, setting: SETTING_KEYS.HIDE_PRIVATE_MESSAGES },
     { handler: HideDamageButtons, setting: SETTING_KEYS.HIDE_DAMAGE_BUTTONS }
 ];
 
 export function initializeFeatures() {
     registerModuleSettings();
-    MESSAGE_FEATURES.forEach(feature => feature.handler?.init?.());
+    AutocompleteWhisper.init();
 }
 
 export function processFeatures(message, renderedHtml) {
     const element = rememberMessageElement(message, renderedHtml);
     if (!element) return;
 
-    element.setAttribute(`data-${CHAT_DATA.TYPE}`, MessageClassifier.classify(message));
+    element.setAttribute(`data-${CHAT_DATA.TYPE}`, classifyMessage(message));
 
-    for (const feature of MESSAGE_FEATURES) {
+    for (const feature of messageFeatures) {
         if (!isSettingEnabled(feature.setting)) continue;
 
         if (feature.css) element.classList.add(feature.css);
@@ -396,7 +395,7 @@ export function scheduleChatUiRefresh() {
 
 export function addChatNotification(message) {
     if (isSettingEnabled(SETTING_KEYS.HIDE_PRIVATE_MESSAGES) && HidePrivateMessages.shouldHideMessage(message)) return;
-    ChatTabsManager.addNotification(MessageClassifier.classify(message));
+    ChatTabsManager.addNotification(classifyMessage(message));
 }
 
 export function cleanupMessage(message) {

@@ -146,59 +146,12 @@ export const CHAT_I18N = {
     CLEAR_CONFIRM: "daavy-chat.Clear.Confirm"
 };
 
-export const CHAT_BATCH_SIZE = 100;
-
-export const SETTINGS_CLASSES = {
-    ROW: "daavy-chat-settings-row",
-    GROUP: "daavy-chat-settings-group",
-    GROUP_TITLE: "daavy-chat-settings-group-title"
-};
-
-export const SETTINGS_SELECTORS = {
-    FORM_GROUP: ".form-group"
-};
-
-export const SETTINGS_SELECTOR_FACTORIES = {
-    ROW: (settingId) => `[data-setting-id="${settingId}"]`,
-    INPUT: (settingId) => `[id$="${settingId}"]`
-};
-
-export const SETTINGS_I18N = {
-    GROUP_PREFIX: "daavy-chat.Settings.Groups"
-};
-
-export const RESET_DIALOG = {
-    MENU_KEY: "resetSettings",
-    MENU_ICON: "fas fa-layer-group",
-    I18N_PREFIX: "daavy-chat.Settings.Reset",
-    YES_ACTION: "yes",
-    NO_ACTION: "no",
-    YES_ICON: "fa-solid fa-check",
-    NO_ICON: "fa-solid fa-xmark"
-};
-
-export const CLEANER_CHAT_SELECTORS = {
-    ROLL_TITLE: ".dice-roll h4",
-    ROLL: ".dice-roll",
-    FORMULA: ".dice-formula"
-};
-
-export const CLEANER_CHAT_CLASSES = {
-    SHOW_FORMULA: "daavy-chat-show",
-    HIDE_CHAT_FORMATTING: "daavy-chat-hide-chat-formatting"
-};
-
-export const CHAT_EDITOR_SELECTORS = {
-    PROSE_MIRROR: "prose-mirror[name='message']"
-};
-
 export const AUTOCOMPLETE_WHISPER = {
     HOST_SELECTOR: "#chat-notifications, #chat-form, form.chat-form",
     EDITOR_SELECTOR: "prose-mirror[name='message'], prose-mirror, .editor-content[contenteditable='true'], [contenteditable='true']",
     MESSAGE_EDITOR_SELECTOR: "prose-mirror[name='message'], prose-mirror",
     EDITABLE_SELECTOR: ".editor-content[contenteditable='true'], [contenteditable='true']",
     MAX_RESULTS: 6,
-    STARTUP_REFRESH_DELAYS_MS: [0, 150, 500, 1200, 2500, 5000],
     CARET_NAVIGATION_KEYS: ["ArrowLeft", "ArrowRight", "Home", "End"],
     DEFAULT_ASSISTANT_ROLE: 3,
     DEFAULT_GM_ROLE: 4,
@@ -221,46 +174,6 @@ export const AUTOCOMPLETE_WHISPER = {
         "aria-controls",
         "aria-expanded"
     ]
-};
-
-export const PF2E_SELECTORS = {
-    TRAIT_TAGS: '.tags .tag:is([data-trait], [data-slug]):not(.tag_transparent)[data-tooltip]',
-    TRAIT_CONTAINERS: ".tags",
-    VISIBLE_TRAIT_TAGS: "span.tag:is([data-trait], [data-slug]):not(.tag_transparent)",
-    CLICKABLE_TRAIT_TAG: "span.tag.daavy-chat-clickable",
-    DAMAGE_BUTTONS: "button.success[data-action='strike-damage'], button.critical-success[data-action='strike-damage']",
-    MESSAGE_METADATA: ".message-metadata",
-    MESSAGE_DELETE: ".message-delete",
-    TOGGLE_DAMAGE_BUTTONS: ".daavy-chat-toggle-buttons"
-};
-
-export const PF2E_CLASSES = {
-    FILTERED_TRAIT: "daavy-chat-filtered",
-    CLICKABLE_TRAIT: "daavy-chat-clickable",
-    HIDDEN_TRAIT: "daavy-chat-hidden",
-    EXPANDED_TRAITS: "daavy-chat-expanded",
-    HIDDEN_DAMAGE_BUTTONS: "daavy-chat-buttons-hidden",
-    TOGGLE_DAMAGE_BUTTONS: "daavy-chat-toggle-buttons"
-};
-
-export const PF2E_DATA = {
-    TRAITS_LIMITED: "daavyChatLimited",
-    DAMAGE_BUTTONS_PROCESSED: "daavyChatButtonsProcessed"
-};
-
-export const PF2E_LIMITS = {
-    VISIBLE_TRAITS: 3
-};
-
-export const PF2E_I18N = {
-    SHOW_DAMAGE_BUTTONS: "daavy-chat.HideDamageButtons.Show",
-    HIDE_DAMAGE_BUTTONS: "daavy-chat.HideDamageButtons.Hide",
-    TOGGLE_DAMAGE_BUTTONS: "daavy-chat.HideDamageButtons.ToggleLabel"
-};
-
-export const PF2E_ICONS = {
-    DAMAGE_BUTTONS_HIDDEN: "fa-solid fa-eye-slash",
-    DAMAGE_BUTTONS_VISIBLE: "fa-solid fa-eye"
 };
 
 export const PF2E_TRAITS_TO_HIDE = [

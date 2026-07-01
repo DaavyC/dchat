@@ -1,6 +1,44 @@
-import { PF2E_CLASSES, PF2E_DATA, PF2E_I18N, PF2E_ICONS, PF2E_LIMITS, PF2E_SELECTORS, PF2E_TRAITS_TO_HIDE } from "../config.js";
-import { getCleanupSignal, getDocument, getElement, isCurrentUserAuthor, registerCleanup } from "../utils.js";
+import { PF2E_TRAITS_TO_HIDE } from "../config.js";
+import { getDocument, getElement, isCurrentUserAuthor, registerCleanup } from "../utils.js";
 import { log } from "../debug.js";
+
+const PF2E_SELECTORS = {
+    TRAIT_TAGS: '.tags .tag:is([data-trait], [data-slug]):not(.tag_transparent)[data-tooltip]',
+    TRAIT_CONTAINERS: ".tags",
+    VISIBLE_TRAIT_TAGS: "span.tag:is([data-trait], [data-slug]):not(.tag_transparent)",
+    CLICKABLE_TRAIT_TAG: "span.tag.daavy-chat-clickable",
+    DAMAGE_BUTTONS: "button.success[data-action='strike-damage'], button.critical-success[data-action='strike-damage']",
+    MESSAGE_METADATA: ".message-metadata",
+    MESSAGE_DELETE: ".message-delete",
+    TOGGLE_DAMAGE_BUTTONS: ".daavy-chat-toggle-buttons"
+};
+
+const PF2E_CLASSES = {
+    FILTERED_TRAIT: "daavy-chat-filtered",
+    CLICKABLE_TRAIT: "daavy-chat-clickable",
+    HIDDEN_TRAIT: "daavy-chat-hidden",
+    EXPANDED_TRAITS: "daavy-chat-expanded",
+    HIDDEN_DAMAGE_BUTTONS: "daavy-chat-buttons-hidden",
+    TOGGLE_DAMAGE_BUTTONS: "daavy-chat-toggle-buttons"
+};
+
+const PF2E_DATA = {
+    TRAITS_LIMITED: "daavyChatLimited",
+    DAMAGE_BUTTONS_PROCESSED: "daavyChatButtonsProcessed"
+};
+
+const VISIBLE_TRAIT_LIMIT = 3;
+
+const PF2E_I18N = {
+    SHOW_DAMAGE_BUTTONS: "daavy-chat.HideDamageButtons.Show",
+    HIDE_DAMAGE_BUTTONS: "daavy-chat.HideDamageButtons.Hide",
+    TOGGLE_DAMAGE_BUTTONS: "daavy-chat.HideDamageButtons.ToggleLabel"
+};
+
+const PF2E_ICONS = {
+    DAMAGE_BUTTONS_HIDDEN: "fa-solid fa-eye-slash",
+    DAMAGE_BUTTONS_VISIBLE: "fa-solid fa-eye"
+};
 
 export class TraitFilter {
     static processMessage(_message, renderedHtml) {
@@ -33,11 +71,11 @@ export class TraitFilter {
             const visibleTraitTags = Array.from(container.querySelectorAll(PF2E_SELECTORS.VISIBLE_TRAIT_TAGS))
                 .filter(tag => !tag.classList.contains(PF2E_CLASSES.FILTERED_TRAIT));
 
-            if (visibleTraitTags.length <= PF2E_LIMITS.VISIBLE_TRAITS) return;
+            if (visibleTraitTags.length <= VISIBLE_TRAIT_LIMIT) return;
 
             visibleTraitTags.forEach((tag, index) => {
                 tag.classList.add(PF2E_CLASSES.CLICKABLE_TRAIT);
-                if (index >= PF2E_LIMITS.VISIBLE_TRAITS) tag.classList.add(PF2E_CLASSES.HIDDEN_TRAIT);
+                if (index >= VISIBLE_TRAIT_LIMIT) tag.classList.add(PF2E_CLASSES.HIDDEN_TRAIT);
             });
 
             const signal = registerCleanup(messageElement, () => {
@@ -69,7 +107,7 @@ export class HideDamageButtons {
         const canToggle = isCurrentUserAuthor(message) || !!game.user?.isGM;
         this._setButtonsHidden(damageButtons, true);
 
-        const signal = getCleanupSignal(messageElement);
+        const signal = registerCleanup(messageElement);
 
         damageButtons.forEach(button => {
             button.addEventListener("click", () => {
