@@ -36,6 +36,26 @@
     margin-left: 4px;
 }
 
+.daavy-chat-pin-toggle {
+    cursor: pointer;
+    margin-right: 5px;
+    opacity: 0.65;
+}
+
+.daavy-chat-pin-toggle:hover,
+.daavy-chat-pin-toggle.active {
+    opacity: 1;
+    color: var(--color-text-hyperlink, #4a90e2);
+}
+
+.chat-message.daavy-chat-pinned {
+    border-left: 3px solid var(--color-text-hyperlink, #4a90e2);
+}
+
+.chat-message.daavy-chat-pinned .message-delete {
+    display: none !important;
+}
+
 .daavy-chat-tab-bar {
     position: relative;
     z-index: 10;

@@ -1,5 +1,5 @@
 import { error, isDebugEnabled } from "./debug.js";
-import { CHAT_SELECTORS, MESSAGE_TYPES } from "./config.js";
+import { CHAT_SELECTORS, MESSAGE_TYPES, MODULE_ID } from "./config.js";
 
 export function classifyMessage(message = {}) {
     const flags = message.flags?.pf2e ?? {};
@@ -19,6 +19,10 @@ export function classifyMessage(message = {}) {
     }
 
     return MESSAGE_TYPES.CHAT;
+}
+
+export function isPinnedMessage(message = {}) {
+    return message.getFlag?.(MODULE_ID, "pinned") === true || message.flags?.[MODULE_ID]?.pinned === true;
 }
 
 function isElement(candidateElement) {

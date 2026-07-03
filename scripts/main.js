@@ -6,10 +6,19 @@ import {
     CHAT_TAB_CONFIG,
     FEATURE_CLASSES,
     MESSAGE_TYPES,
+    MODULE_ID,
     SETTING_KEYS
 } from "./config.js";
 import { isSettingEnabled, registerModuleSettings } from "./settings.js";
-import { classifyMessage, cleanupDeletedMessage, getDocument, getElement, rememberMessageElement } from "./utils.js";
+import {
+    classifyMessage,
+    cleanupDeletedMessage,
+    getDocument,
+    getElement,
+    isPinnedMessage,
+    registerCleanup,
+    rememberMessageElement
+} from "./utils.js";
 import { AutocompleteWhisper } from "./features/autocomplete-whisper.js";
 import { CollapsibleFormula } from "./features/cleaner-chat.js";
 import { HidePrivateMessages } from "./features/hide-private-messages.js";
@@ -129,8 +138,11 @@ export class ChatClearControls {
     }
 
     static _getMessagesToClear(clearAll) {
-        if (clearAll) return game.messages.contents;
-        return game.messages.filter(message => classifyMessage(message) === ChatTabsManager.activeTab);
+        const messages = clearAll
+            ? game.messages.contents
+            : game.messages.filter(message => classifyMessage(message) === ChatTabsManager.activeTab);
+
+        return messages.filter(message => !isPinnedMessage(message));
     }
 
     static _confirmClear(tabLabel, messageCount) {
@@ -146,6 +158,113 @@ export class ChatClearControls {
         for (let batchStartIndex = 0; batchStartIndex < messageIds.length; batchStartIndex += 100) {
             await ChatMessage.deleteDocuments(messageIds.slice(batchStartIndex, batchStartIndex + 100));
         }
+    }
+}
+
+export class ChatPins {
+    static pinTypes = new Set([MESSAGE_TYPES.CHAT, MESSAGE_TYPES.GAME]);
+
+    static processMessage(message, renderedHtml) {
+        const element = getElement(renderedHtml);
+        if (!element) return;
+
+        const messageType = classifyMessage(message);
+        const pinned = isPinnedMessage(message);
+        this._setPinnedState(element, pinned);
+
+        if (!this._canPin(message, messageType)) return;
+        this._injectToggle(message, element, pinned);
+    }
+
+    static refresh(element = null) {
+        const container = getElement(element);
+        if (container) {
+            this._refreshContainer(container);
+            return;
+        }
+
+        ChatTabsManager._getTrackedContainers().forEach(trackedContainer => this._refreshContainer(trackedContainer));
+    }
+
+    static scheduleRefresh(element = null) {
+        const refresh = () => this.refresh(element);
+        if (typeof requestAnimationFrame === "function") requestAnimationFrame(refresh);
+        else refresh();
+    }
+
+    static preDeleteMessage(message) {
+        if (!isPinnedMessage(message)) return;
+
+        globalThis.ui?.notifications?.warn?.(game.i18n.localize(CHAT_I18N.DELETE_PINNED));
+        return false;
+    }
+
+    static _refreshContainer(container) {
+        const messageList = ChatTabsManager._getMessageList(container);
+        if (!messageList) return;
+
+        const messageElements = Array.from(messageList.querySelectorAll(CHAT_SELECTORS.MESSAGE_ID));
+        const pinnedElements = messageElements.filter(messageElement => {
+            const message = game.messages.get(messageElement.dataset.messageId);
+            const pinned = isPinnedMessage(message);
+            this._setPinnedState(messageElement, pinned);
+            return pinned;
+        });
+
+        pinnedElements.reverse().forEach(messageElement => messageList.prepend(messageElement));
+    }
+
+    static _canPin(message, messageType) {
+        return !!game.user?.isGM && !!message?.setFlag && this.pinTypes.has(messageType);
+    }
+
+    static _injectToggle(message, messageElement, pinned) {
+        const metadata = messageElement.querySelector(CHAT_SELECTORS.MESSAGE_METADATA);
+        if (!metadata || metadata.querySelector(CHAT_SELECTORS.PIN_TOGGLE)) return;
+
+        const toggle = getDocument(metadata).createElement("a");
+        toggle.className = CHAT_CLASSES.PIN_TOGGLE;
+        toggle.tabIndex = 0;
+        toggle.setAttribute("role", "button");
+
+        const togglePinned = async (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            await message.setFlag(MODULE_ID, "pinned", isPinnedMessage(message) ? null : true);
+            this.scheduleRefresh();
+        };
+        const signal = registerCleanup(messageElement);
+
+        toggle.addEventListener("click", togglePinned, { signal });
+        toggle.addEventListener("keydown", (event) => {
+            if (event.key === "Enter" || event.key === " ") togglePinned(event);
+        }, { signal });
+
+        this._syncToggle(toggle, pinned);
+
+        const deleteButton = metadata.querySelector(CHAT_SELECTORS.MESSAGE_DELETE);
+        metadata.insertBefore(toggle, deleteButton ?? metadata.firstChild);
+    }
+
+    static _setPinnedState(messageElement, pinned) {
+        messageElement.classList.toggle(CHAT_CLASSES.PINNED, pinned);
+        if (pinned) {
+            messageElement.setAttribute(`data-${CHAT_DATA.PINNED}`, "true");
+        } else {
+            messageElement.removeAttribute(`data-${CHAT_DATA.PINNED}`);
+        }
+
+        const toggle = messageElement.querySelector(CHAT_SELECTORS.PIN_TOGGLE);
+        if (toggle) this._syncToggle(toggle, pinned);
+    }
+
+    static _syncToggle(toggle, pinned) {
+        const label = game.i18n.localize(pinned ? CHAT_I18N.UNPIN : CHAT_I18N.PIN);
+        toggle.classList.toggle(CHAT_CLASSES.ACTIVE, pinned);
+        toggle.dataset.tooltip = label;
+        toggle.title = label;
+        toggle.setAttribute("aria-label", label);
+        toggle.innerHTML = `<i class="fas fa-thumbtack"></i>`;
     }
 }
 
@@ -233,6 +352,7 @@ export class ChatTabsManager {
         toolbar.prepend(this._buildTabBar(getDocument(element)));
         this._applyFilterClass(element, messageLog, this.activeTab);
         this.classifyExistingMessages(element);
+        ChatPins.refresh(element);
         this._bindTabBar(element);
 
         ChatClearControls.refresh(element);
@@ -374,6 +494,7 @@ export function processFeatures(message, renderedHtml) {
     if (!element) return;
 
     element.setAttribute(`data-${CHAT_DATA.TYPE}`, classifyMessage(message));
+    ChatPins.processMessage(message, element);
 
     for (const feature of messageFeatures) {
         if (!isSettingEnabled(feature.setting)) continue;
@@ -400,4 +521,8 @@ export function addChatNotification(message) {
 
 export function cleanupMessage(message) {
     cleanupDeletedMessage(message);
+}
+
+export function preventPinnedMessageDelete(message) {
+    return ChatPins.preDeleteMessage(message);
 }

@@ -11,6 +11,7 @@ import {
     addChatNotification,
     cleanupMessage,
     initializeFeatures,
+    preventPinnedMessageDelete,
     processFeatures,
     refreshChatUi,
     scheduleChatUiRefresh
@@ -73,6 +74,8 @@ export function registerDaavyChatHooks() {
 
     Hooks.on("renderChatMessageHTML", processFeatures);
     Hooks.on("createChatMessage", addChatNotification);
+    Hooks.on("updateChatMessage", scheduleChatUiRefresh);
+    Hooks.on("preDeleteChatMessage", preventPinnedMessageDelete);
 
     Hooks.on("preCreateChatMessage", (message, creationData) => {
         return HideChatInitiative.preCreateChatMessage(message, creationData);

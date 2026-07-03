@@ -1,3 +1,6 @@
+##### 1.6.0
+- Added Chat Pins
+
 ##### 1.5.1
 - Removed the option to reset the settings
 

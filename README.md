@@ -11,6 +11,7 @@ A simple module for **Foundry VTT** that organizes the chat log into tabs and ad
 ## 🗂️ Features
 
 - **💬 Chat Tabs** — Splits messages into Chat, Game, and Whispers.
+- **📌 Chat Pins** — Lets GMs pin messages above the log until unpinned.
 - **🧹 Chat Clearing** — Clears the active tab or every tab with SHIFT.
 - **✍️ Message Input** — Adds whisper autocomplete and hides formatting controls.
 - **🎲 Cleaner Messages** — Hides clutter from messages, rolls, and initiative.

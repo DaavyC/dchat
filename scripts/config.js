@@ -117,6 +117,9 @@ export const CHAT_SELECTORS = {
     TAB_BUTTON: ".daavy-chat-tab-bar .daavy-chat-tab",
     TAB_DATA: "[data-daavy-chat-tab]",
     MESSAGE_ID: "[data-message-id]",
+    MESSAGE_METADATA: ".message-metadata",
+    MESSAGE_DELETE: ".message-delete",
+    PIN_TOGGLE: ".daavy-chat-pin-toggle",
     SCOPED_CLEAR: ".daavy-chat-scoped-clear",
     PIP: ".daavy-chat-pip"
 };
@@ -127,13 +130,16 @@ export const CHAT_CLASSES = {
     TAB_BUTTON: "daavy-chat-tab",
     ACTIVE: "active",
     PIP: "daavy-chat-pip",
+    PINNED: "daavy-chat-pinned",
+    PIN_TOGGLE: "daavy-chat-pin-toggle",
     SCOPED_CLEAR: "ui-control icon fas fa-trash daavy-chat-scoped-clear",
     FILTER_PREFIX: "daavy-chat-filter"
 };
 
 export const CHAT_DATA = {
     TAB: "daavyChatTab",
-    TYPE: "daavy-chat-type"
+    TYPE: "daavy-chat-type",
+    PINNED: "daavy-chat-pinned"
 };
 
 export const CHAT_I18N = {
@@ -143,7 +149,10 @@ export const CHAT_I18N = {
     CLEAR_NO_MESSAGES: "daavy-chat.Clear.NoMessages",
     CLEAR_SUCCESS: "daavy-chat.Clear.Success",
     CLEAR_TITLE: "daavy-chat.Clear.Title",
-    CLEAR_CONFIRM: "daavy-chat.Clear.Confirm"
+    CLEAR_CONFIRM: "daavy-chat.Clear.Confirm",
+    PIN: "daavy-chat.Pin.Pin",
+    UNPIN: "daavy-chat.Pin.Unpin",
+    DELETE_PINNED: "daavy-chat.Pin.DeletePinned"
 };
 
 export const AUTOCOMPLETE_WHISPER = {

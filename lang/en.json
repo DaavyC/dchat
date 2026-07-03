@@ -35,5 +35,8 @@
   "daavy-chat.Clear.Title": "Clear {label}",
   "daavy-chat.Clear.Confirm": "Delete <strong>{count}</strong> message(s) from <strong>{label}</strong>?",
   "daavy-chat.Clear.Success": "{label}: {count} message(s) cleared.",
-  "daavy-chat.Clear.Tooltip": "Clear active tab (SHIFT to clear all)"
+  "daavy-chat.Clear.Tooltip": "Clear active tab (SHIFT to clear all)",
+  "daavy-chat.Pin.Pin": "Pin message",
+  "daavy-chat.Pin.Unpin": "Unpin message",
+  "daavy-chat.Pin.DeletePinned": "Pinned messages cannot be deleted."
 }
