@@ -1,3 +1,6 @@
+##### 1.5.1
+- Removed the option to reset the settings
+
 ##### 1.5.0
 - Added Hide Chat Formatting, which removes ProseMirror from chat
 - Reorganized the settings menu

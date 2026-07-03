@@ -16,7 +16,7 @@ A simple module for **Foundry VTT** that organizes the chat log into tabs and ad
 - **🎲 Cleaner Messages** — Hides clutter from messages, rolls, and initiative.
 - **🔒 Private Rolls** — Hides private rolls from unauthorized users.
 - **⚔️ PF2e Tools** — Hides traits, damage-roll details, and damage buttons.
-- **⚙️ Settings** — Organizes options and provides a reset button.
+- **⚙️ Settings** — Organizes module options.
 
 ---
 
@@ -41,12 +41,6 @@ A simple module for **Foundry VTT** that organizes the chat log into tabs and ad
 ### Advanced
 
 - **Debug** — Shows debug logs.
-
-### Reset
-
-- **Reset Settings** — Restores default settings.
-
----
 
 ## 🛠️ Compatibility
 
