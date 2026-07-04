@@ -1,6 +1,5 @@
 import { PF2E_TRAITS_TO_HIDE } from "../config.js";
 import { getDocument, getElement, isCurrentUserAuthor, registerCleanup } from "../utils.js";
-import { log } from "../debug.js";
 
 const PF2E_SELECTORS = {
     TRAIT_TAGS: '.tags .tag:is([data-trait], [data-slug]):not(.tag_transparent)[data-tooltip]',
@@ -51,7 +50,6 @@ export class TraitFilter {
             if (!tooltip) continue;
 
             const tooltipLower = tooltip.toLowerCase();
-            log("TraitFilter: tooltip =", tooltip, "toLowerCase =", tooltipLower);
             const shouldHide = PF2E_TRAITS_TO_HIDE.some(trait => tooltipLower.endsWith(trait));
 
             if (shouldHide) {
@@ -78,9 +76,7 @@ export class TraitFilter {
                 if (index >= VISIBLE_TRAIT_LIMIT) tag.classList.add(PF2E_CLASSES.HIDDEN_TRAIT);
             });
 
-            const signal = registerCleanup(messageElement, () => {
-                container.classList.remove(PF2E_CLASSES.EXPANDED_TRAITS);
-            });
+            const signal = registerCleanup(messageElement);
 
             container.addEventListener("click", (event) => {
                 const clickableTag = event.target.closest(PF2E_SELECTORS.CLICKABLE_TRAIT_TAG);

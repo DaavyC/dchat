@@ -1,6 +1,5 @@
 import {
     CHAT_CLASSES,
-    CHAT_I18N,
     CHAT_SELECTORS,
     CHAT_TAB_CONFIG,
     MESSAGE_TYPES,
@@ -16,6 +15,7 @@ import {
 } from "../utils.js";
 
 let refreshPinsUi = () => {};
+const i18nKey = key => `daavy-chat.${key}`;
 
 export function setPinRefreshHandler(handler) {
     refreshPinsUi = typeof handler === "function" ? handler : refreshPinsUi;
@@ -51,7 +51,7 @@ export class ChatPins {
     static preDeleteMessage(message) {
         if (!isPinnedMessage(message)) return;
 
-        globalThis.ui?.notifications?.warn?.(game.i18n.localize(CHAT_I18N.DELETE_PINNED));
+        globalThis.ui?.notifications?.warn?.(game.i18n.localize(i18nKey("Pin.DeletePinned")));
         return false;
     }
 
@@ -73,7 +73,7 @@ export class ChatPins {
         button.type = "button";
         button.className = CHAT_CLASSES.PIN_MANAGER;
 
-        const tooltip = game.i18n.localize(CHAT_I18N.MANAGER);
+        const tooltip = game.i18n.localize(i18nKey("Pin.Manager"));
         button.dataset.tooltip = tooltip;
         button.title = tooltip;
         button.setAttribute("aria-label", tooltip);
@@ -101,7 +101,7 @@ export class ChatPins {
 
     static showManager(activeTab = null) {
         const dialog = new foundry.applications.api.DialogV2({
-            window: { title: game.i18n.localize(CHAT_I18N.MANAGER) },
+            window: { title: game.i18n.localize(i18nKey("Pin.Manager")) },
             content: this._buildManagerContent(activeTab),
             buttons: [{ action: "close", label: "Close" }]
         });
@@ -117,15 +117,15 @@ export class ChatPins {
         const tabButtons = CHAT_TAB_CONFIG.map(tab => this._buildManagerTab(tab, pinnedMessages, selectedTab)).join("");
         const body = activeMessages.length
             ? activeMessages.map(message => this._buildManagerItem(message)).join("")
-            : `<p class="daavy-chat-pin-manager-empty">${game.i18n.localize(CHAT_I18N.MANAGER_EMPTY)}</p>`;
+            : `<p class="daavy-chat-pin-manager-empty">${game.i18n.localize(i18nKey("Pin.ManagerEmpty"))}</p>`;
 
         return `
             <div class="daavy-chat-pin-manager-content" data-daavy-chat-pin-active-tab="${selectedTab}">
-                <nav class="daavy-chat-pin-manager-tabs" aria-label="${game.i18n.localize(CHAT_I18N.MANAGER)}">
+                <nav class="daavy-chat-pin-manager-tabs" aria-label="${game.i18n.localize(i18nKey("Pin.Manager"))}">
                     ${tabButtons}
                 </nav>
                 <div class="daavy-chat-pin-manager-actions">
-                    ${activeMessages.length ? `<button type="button" class="daavy-chat-pin-manager-unpin-all">${game.i18n.localize(CHAT_I18N.MANAGER_UNPIN_ALL)}</button>` : ""}
+                    ${activeMessages.length ? `<button type="button" class="daavy-chat-pin-manager-unpin-all">${game.i18n.localize(i18nKey("Pin.ManagerUnpinAll"))}</button>` : ""}
                 </div>
                 <section class="daavy-chat-pin-manager-list">
                     ${body}
@@ -221,7 +221,7 @@ export class ChatPins {
                     </header>
                     <div class="daavy-chat-pin-manager-preview">${preview}</div>
                 </div>
-                <button type="button" data-daavy-chat-unpin="${this._escapeHtml(message.id)}">${game.i18n.localize(CHAT_I18N.UNPIN)}</button>
+                <button type="button" data-daavy-chat-unpin="${this._escapeHtml(message.id)}">${game.i18n.localize(i18nKey("Pin.Unpin"))}</button>
             </article>
         `;
     }
@@ -269,7 +269,7 @@ export class ChatPins {
     }
 
     static _syncToggle(toggle, pinned, mode = "pin") {
-        const label = game.i18n.localize(mode === "request" ? CHAT_I18N.PIN_REQUEST : (pinned ? CHAT_I18N.UNPIN : CHAT_I18N.PIN));
+        const label = game.i18n.localize(mode === "request" ? i18nKey("Pin.Request") : (pinned ? i18nKey("Pin.Unpin") : i18nKey("Pin.Pin")));
         toggle.classList.toggle(CHAT_CLASSES.ACTIVE, pinned);
         toggle.dataset.tooltip = label;
         toggle.title = label;
@@ -280,7 +280,7 @@ export class ChatPins {
     static requestPin(message) {
         const targetGm = this._getPinRequestGm();
         if (!targetGm) {
-            globalThis.ui?.notifications?.warn?.(game.i18n.localize(CHAT_I18N.PIN_REQUEST_NO_GM));
+            globalThis.ui?.notifications?.warn?.(game.i18n.localize(i18nKey("Pin.NoGm")));
             return;
         }
 
@@ -296,7 +296,7 @@ export class ChatPins {
             messageTo: this._getMessageRecipients(message),
             messageTime: this._getMessageTime(message)
         });
-        globalThis.ui?.notifications?.info?.(game.i18n.localize(CHAT_I18N.PIN_REQUEST_SENT));
+        globalThis.ui?.notifications?.info?.(game.i18n.localize(i18nKey("Pin.Sent")));
     }
 
     static async _handleSocket(payload) {
@@ -313,9 +313,9 @@ export class ChatPins {
         }
 
         const notificationKey = {
-            approved: CHAT_I18N.PIN_REQUEST_APPROVED,
-            denied: CHAT_I18N.PIN_REQUEST_DENIED,
-            busy: CHAT_I18N.PIN_REQUEST_BUSY
+            approved: i18nKey("Pin.Approved"),
+            denied: i18nKey("Pin.Denied"),
+            busy: i18nKey("Pin.Busy")
         }[response.status];
         if (!notificationKey) return;
 
@@ -347,14 +347,14 @@ export class ChatPins {
         };
 
         new foundry.applications.api.DialogV2({
-            window: { title: game.i18n.localize(CHAT_I18N.PIN_REQUEST_TITLE) },
+            window: { title: game.i18n.localize(i18nKey("Pin.RequestTitle")) },
             modal: true,
             content: this._buildPinRequestContent(request),
             buttons: [
                 {
                     action: "approved",
                     icon: "fas fa-check",
-                    label: game.i18n.localize(CHAT_I18N.PIN_REQUEST_ACCEPT),
+                    label: game.i18n.localize(i18nKey("Pin.Accept")),
                     class: "daavy-chat-pin-accept",
                     default: true,
                     callback: () => resolveRequest("approved")
@@ -362,7 +362,7 @@ export class ChatPins {
                 {
                     action: "denied",
                     icon: "fas fa-times",
-                    label: game.i18n.localize(CHAT_I18N.PIN_REQUEST_DENY),
+                    label: game.i18n.localize(i18nKey("Pin.Deny")),
                     class: "daavy-chat-pin-deny",
                     callback: () => resolveRequest("denied")
                 }
@@ -389,7 +389,7 @@ export class ChatPins {
 
         return `
             <div class="daavy-chat-pin-request">
-                <p class="daavy-chat-pin-requester"><strong>${game.i18n.localize(CHAT_I18N.PIN_REQUEST_REQUESTER)}</strong> ${this._escapeHtml(request.requesterName)}</p>
+                <p class="daavy-chat-pin-requester"><strong>${game.i18n.localize(i18nKey("Pin.Requester"))}</strong> ${this._escapeHtml(request.requesterName)}</p>
                 <div class="daavy-chat-pin-request-preview">
                     <header>
                         ${author ? `<strong>${author}</strong>` : ""}
@@ -440,9 +440,7 @@ export class ChatPins {
     }
 
     static _getPinRequestGm() {
-        return game.users.contents
-            .filter(user => user.active && user.isGM)
-            .sort((left, right) => left.id.localeCompare(right.id))[0] ?? null;
+        return game.users.contents.find(user => user.active && user.isGM) ?? null;
     }
 
     static _escapeHtml(value) {

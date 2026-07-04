@@ -54,24 +54,16 @@ export function getChatSection(renderedHtml) {
     return element.querySelector(CHAT_SELECTORS.SECTION);
 }
 
-function getFoundryUtils() {
-    return globalThis.foundry?.utils ?? {};
-}
-
 export function getProperty(sourceObject, path) {
-    const foundryGetProperty = getFoundryUtils().getProperty;
-    if (typeof foundryGetProperty === "function") return foundryGetProperty(sourceObject, path);
-
-    return path.split(".").reduce((currentValue, key) => currentValue?.[key], sourceObject);
+    return foundry.utils.getProperty(sourceObject, path);
 }
 
 export function expandObject(flattenedData) {
-    const foundryExpandObject = getFoundryUtils().expandObject;
-    return typeof foundryExpandObject === "function" ? foundryExpandObject(flattenedData) : flattenedData;
+    return foundry.utils.expandObject(flattenedData);
 }
 
 export function randomId() {
-    const foundryRandomId = getFoundryUtils().randomID;
+    const foundryRandomId = foundry.utils.randomID;
     return typeof foundryRandomId === "function" ? foundryRandomId() : Math.random().toString(36).slice(2);
 }
 

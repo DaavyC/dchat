@@ -28,10 +28,6 @@ export function registerDaavyChatHooks() {
         HidePrivateMessages.onReady();
     });
 
-    Hooks.once("i18nInit", () => {
-        ChatTabsManager.resetLocalizedLabels();
-    });
-
     Hooks.on("renderSettingsConfig", (_application, renderedHtml) => {
         SettingsLayout.groupSettings(renderedHtml);
     });

@@ -1,7 +1,6 @@
 import {
     CHAT_CLASSES,
     CHAT_DATA,
-    CHAT_I18N,
     CHAT_SELECTORS,
     CHAT_TAB_CONFIG,
     FEATURE_CLASSES,
@@ -24,6 +23,8 @@ import { ChatPins, setPinRefreshHandler } from "./features/pins.js";
 import { HideDamageButtons, TraitFilter } from "./features/pf2e-only.js";
 
 export { ChatPins } from "./features/pins.js";
+
+const i18nKey = key => `daavy-chat.${key}`;
 
 export class ChatClearControls {
     static _observers = new WeakMap();
@@ -69,7 +70,7 @@ export class ChatClearControls {
         button.type = "button";
         button.className = CHAT_CLASSES.SCOPED_CLEAR;
 
-        const tooltip = game.i18n.localize(CHAT_I18N.CLEAR_TOOLTIP);
+        const tooltip = game.i18n.localize(i18nKey("Clear.Tooltip"));
         button.dataset.tooltip = tooltip;
         button.title = tooltip;
         button.setAttribute("aria-label", tooltip);
@@ -117,7 +118,7 @@ export class ChatClearControls {
         const messages = this._getMessagesToClear(clearAll);
 
         if (!messages.length) {
-            return ui.notifications.info(game.i18n.format(CHAT_I18N.CLEAR_NO_MESSAGES, { label: tabLabel }));
+            return ui.notifications.info(game.i18n.format(i18nKey("Clear.NoMessages"), { label: tabLabel }));
         }
 
         if (!await this._confirmClear(tabLabel, messages.length)) return;
@@ -125,7 +126,7 @@ export class ChatClearControls {
         const messageIds = messages.map(message => message.id);
         await this._deleteInBatches(messageIds);
 
-        ui.notifications.info(game.i18n.format(CHAT_I18N.CLEAR_SUCCESS, { label: tabLabel, count: messageIds.length }));
+        ui.notifications.info(game.i18n.format(i18nKey("Clear.Success"), { label: tabLabel, count: messageIds.length }));
     }
 
     static _getFoundryClearButton(element) {
@@ -136,10 +137,10 @@ export class ChatClearControls {
     }
 
     static _getClearLabel(clearAll) {
-        if (clearAll) return game.i18n.localize(CHAT_I18N.TABS_ALL);
+        if (clearAll) return game.i18n.localize(i18nKey("Tabs.All"));
 
         const currentTab = CHAT_TAB_CONFIG.find(tab => tab.id === ChatTabsManager.activeTab);
-        return game.i18n.localize(currentTab?.label ?? CHAT_I18N.TABS_CHAT);
+        return game.i18n.localize(currentTab?.label ?? i18nKey("Tabs.Chat"));
     }
 
     static _getMessagesToClear(clearAll) {
@@ -152,8 +153,8 @@ export class ChatClearControls {
 
     static _confirmClear(tabLabel, messageCount) {
         return foundry.applications.api.DialogV2.confirm({
-            window: { title: game.i18n.format(CHAT_I18N.CLEAR_TITLE, { label: tabLabel }) },
-            content: `<p>${game.i18n.format(CHAT_I18N.CLEAR_CONFIRM, { count: messageCount, label: tabLabel })}</p>`,
+            window: { title: game.i18n.format(i18nKey("Clear.Title"), { label: tabLabel }) },
+            content: `<p>${game.i18n.format(i18nKey("Clear.Confirm"), { count: messageCount, label: tabLabel })}</p>`,
             yes: { default: true },
             no: { default: false },
         });
@@ -168,24 +169,16 @@ export class ChatClearControls {
 
 
 export class ChatTabsManager {
-    static _localizedLabels = null;
     static _chatContainers = new Set();
     static activeTab = MESSAGE_TYPES.CHAT;
     static unreadTabs = new Set();
 
     static getLocalizedLabels() {
-        if (!this._localizedLabels) {
-            this._localizedLabels = CHAT_TAB_CONFIG.map(tab => ({
-                id: tab.id,
-                icon: tab.icon,
-                label: game.i18n.localize(tab.label)
-            }));
-        }
-        return this._localizedLabels;
-    }
-
-    static resetLocalizedLabels() {
-        this._localizedLabels = null;
+        return CHAT_TAB_CONFIG.map(tab => ({
+            id: tab.id,
+            icon: tab.icon,
+            label: game.i18n.localize(tab.label)
+        }));
     }
 
     static scheduleRefresh(element = null) {

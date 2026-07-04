@@ -1,6 +1,6 @@
 import {
     MODULE_ID,
-    SETTING_DEFINITIONS,
+    SETTINGS,
     SETTING_GROUPS
 } from "./config.js";
 import { getDocument, getElement } from "./utils.js";
@@ -65,12 +65,12 @@ export class SettingsLayout {
 }
 
 export function registerModuleSettings() {
-    for (const [key, options] of Object.entries(SETTING_DEFINITIONS)) {
-        registerBooleanSetting(key, options);
+    for (const setting of Object.values(SETTINGS)) {
+        registerBooleanSetting(setting);
     }
 }
 
-function registerBooleanSetting(key, options) {
+function registerBooleanSetting({ key, ...options }) {
     game.settings.register(MODULE_ID, key, {
         scope: "client",
         config: true,

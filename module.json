@@ -8,8 +8,7 @@
       "name": "Daavy",
       "discord": "daavy",
       "email": "Daavyc@gmail.com",
-      "url": "https://github.com/DaavyC",
-      "flags": {}
+      "url": "https://github.com/DaavyC"
     }
   ],
   "url": "https://github.com/DaavyC/dchat",
@@ -33,6 +32,5 @@
       "name": "English",
       "path": "lang/en.json"
     }
-  ],
-  "flags": {}
+  ]
 }

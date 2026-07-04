@@ -96,24 +96,30 @@
 }
 
 button.daavy-chat-pin-accept,
-.daavy-chat-pin-accept {
+.daavy-chat-pin-accept,
+dialog:has(.daavy-chat-pin-manager-content) .form-footer button[data-action="close"] {
     color: #f4fff5;
     background: #236c35;
     border-color: #45a85b;
 }
 
-button.daavy-chat-pin-accept:hover {
+button.daavy-chat-pin-accept:hover,
+dialog:has(.daavy-chat-pin-manager-content) .form-footer button[data-action="close"]:hover {
     background: #2f8846;
 }
 
 button.daavy-chat-pin-deny,
-.daavy-chat-pin-deny {
+.daavy-chat-pin-deny,
+.daavy-chat-pin-manager-unpin-all,
+.daavy-chat-pin-manager-item button {
     color: #fff6f6;
     background: #7f2424;
     border-color: #c64b4b;
 }
 
-button.daavy-chat-pin-deny:hover {
+button.daavy-chat-pin-deny:hover,
+.daavy-chat-pin-manager-unpin-all:hover,
+.daavy-chat-pin-manager-item button:hover {
     background: #9b3030;
 }
 
@@ -178,13 +184,6 @@ button.daavy-chat-pin-deny:hover {
 
 .daavy-chat-pin-manager-unpin-all {
     width: auto;
-    color: #fff6f6;
-    background: #7f2424;
-    border-color: #c64b4b;
-}
-
-.daavy-chat-pin-manager-unpin-all:hover {
-    background: #9b3030;
 }
 
 .daavy-chat-pin-manager-list {
@@ -234,23 +233,6 @@ button.daavy-chat-pin-deny:hover {
 
 .daavy-chat-pin-manager-item button {
     width: auto;
-    color: #fff6f6;
-    background: #7f2424;
-    border-color: #c64b4b;
-}
-
-.daavy-chat-pin-manager-item button:hover {
-    background: #9b3030;
-}
-
-dialog:has(.daavy-chat-pin-manager-content) .form-footer button[data-action="close"] {
-    color: #f4fff5;
-    background: #236c35;
-    border-color: #45a85b;
-}
-
-dialog:has(.daavy-chat-pin-manager-content) .form-footer button[data-action="close"]:hover {
-    background: #2f8846;
 }
 
 .daavy-chat-tab-bar {

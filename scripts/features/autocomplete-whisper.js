@@ -1,6 +1,34 @@
-import { AUTOCOMPLETE_WHISPER, SETTING_KEYS } from "../config.js";
+import { SETTING_KEYS } from "../config.js";
 import { createAbortController, getDocument, getElement, randomId, removeAttributes } from "../utils.js";
 import { isSettingEnabled } from "../settings.js";
+
+const AUTOCOMPLETE_WHISPER = {
+    HOST_SELECTOR: "#chat-notifications, #chat-form, form.chat-form",
+    EDITOR_SELECTOR: "prose-mirror[name='message'], prose-mirror, .editor-content[contenteditable='true'], [contenteditable='true']",
+    MESSAGE_EDITOR_SELECTOR: "prose-mirror[name='message'], prose-mirror",
+    EDITABLE_SELECTOR: ".editor-content[contenteditable='true'], [contenteditable='true']",
+    MAX_RESULTS: 6,
+    CARET_NAVIGATION_KEYS: ["ArrowLeft", "ArrowRight", "Home", "End"],
+    PREFIX_PATTERN: /^(\/w|\/whisper)\s+/i,
+    HOST_CLASS: "daavy-chat-whisper-autocomplete-host",
+    POPUP_CLASS: "daavy-chat-whisper-autocomplete",
+    VISIBLE_CLASS: "visible",
+    POPUP_ID_PREFIX: "daavy-chat-whisper",
+    OPTION_CLASS: "daavy-chat-whisper-option",
+    ACTIVE_OPTION_CLASS: "active",
+    STATUS_CLASS: "daavy-chat-whisper-status",
+    ACTIVE_STATUS_CLASS: "is-active",
+    NAME_CLASS: "daavy-chat-whisper-name",
+    INDEX_DATA: "daavyChatWhisperIndex",
+    INDEX_SELECTOR: "[data-daavy-chat-whisper-index]",
+    EDITABLE_ARIA_ATTRIBUTES: [
+        "aria-activedescendant",
+        "aria-autocomplete",
+        "aria-haspopup",
+        "aria-controls",
+        "aria-expanded"
+    ]
+};
 
 export class AutocompleteWhisper {
     static _trackedHosts = new Set();
@@ -591,7 +619,7 @@ export function getSuggestions(match, users, maxResults) {
     const normalizedQuery = normalizeName(match.query);
     const selectedNames = new Set(match.selectedNames.map(normalizeName));
 
-    return sortUsersByWhisperPriority(getUniqueCandidateUsers(users, selectedNames))
+    return sortUsersByStatusAndName(getUniqueCandidateUsers(users, selectedNames))
         .filter(user => matchesQuery(user, normalizedQuery))
         .slice(0, maxResults)
         .map(toSuggestion);
@@ -618,28 +646,14 @@ function getUniqueCandidateUsers(users, selectedNames) {
     });
 }
 
-function sortUsersByWhisperPriority(users) {
+function sortUsersByStatusAndName(users) {
     return users.sort((firstUser, secondUser) => {
         const firstName = getDisplayName(firstUser);
         const secondName = getDisplayName(secondUser);
         if (firstUser.active !== secondUser.active) return firstUser.active ? -1 : 1;
 
-        const rolePriority = getRolePriority(firstUser) - getRolePriority(secondUser);
-        if (rolePriority !== 0) return rolePriority;
-
         return firstName.localeCompare(secondName, game.i18n.lang, { sensitivity: "base" });
     });
-}
-
-function getRolePriority(user) {
-    const roles = globalThis.CONST?.USER_ROLES ?? {};
-    const assistantRole = roles.ASSISTANT ?? AUTOCOMPLETE_WHISPER.DEFAULT_ASSISTANT_ROLE;
-    const gmRole = roles.GAMEMASTER ?? AUTOCOMPLETE_WHISPER.DEFAULT_GM_ROLE;
-    const role = Number(user?.role ?? 0);
-
-    if (user?.isGM || role >= gmRole) return 0;
-    if (role >= assistantRole) return 1;
-    return 2;
 }
 
 function matchesQuery(user, normalizedQuery) {
