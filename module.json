@@ -20,7 +20,7 @@
     "maximum": "14"
   },
   "esmodules": [
-    "init.js"
+    "scripts/main.js"
   ],
   "styles": [
     "styles/main.css"

@@ -1,0 +1,50 @@
+{{#if pinManager}}
+<div class="daavy-chat-pin-manager-content" data-daavy-chat-pin-active-tab="{{activeTab}}">
+    <nav class="daavy-chat-pin-manager-tabs" aria-label="{{managerLabel}}">
+        {{#each tabs}}
+        <button type="button" class="daavy-chat-pin-manager-tab{{#if active}} active{{/if}}" data-daavy-chat-pin-tab="{{id}}" aria-pressed="{{active}}">
+            <i class="fas {{icon}}"></i>
+            <span>{{label}}</span>
+            <span class="daavy-chat-pin-manager-count">{{count}}</span>
+        </button>
+        {{/each}}
+    </nav>
+    <div class="daavy-chat-pin-manager-actions">
+        {{#if messages.length}}
+        <button type="button" class="daavy-chat-pin-manager-unpin-all">{{unpinAllLabel}}</button>
+        {{/if}}
+    </div>
+    <section class="daavy-chat-pin-manager-list">
+        {{#if messages.length}}
+        {{#each messages}}
+        <article class="daavy-chat-pin-manager-item">
+            <div class="daavy-chat-pin-manager-item-body">
+                <header>
+                    <strong>{{author}}</strong>
+                    {{#if time}}<span>{{time}}</span>{{/if}}
+                </header>
+                <div class="daavy-chat-pin-manager-preview">{{preview}}</div>
+            </div>
+            <button type="button" data-daavy-chat-unpin="{{id}}">{{../unpinLabel}}</button>
+        </article>
+        {{/each}}
+        {{else}}
+        <p class="daavy-chat-pin-manager-empty">{{emptyLabel}}</p>
+        {{/if}}
+    </section>
+</div>
+{{/if}}
+
+{{#if pinRequest}}
+<div class="daavy-chat-pin-request">
+    <p class="daavy-chat-pin-requester"><strong>{{requesterLabel}}</strong> {{requesterName}}</p>
+    <div class="daavy-chat-pin-request-preview">
+        <header>
+            {{#if author}}<strong>{{author}}</strong>{{/if}}
+            {{#if time}}<span>{{time}}</span>{{/if}}
+        </header>
+        {{#if to}}<div class="daavy-chat-pin-request-to">To: {{to}}</div>{{/if}}
+        <div class="daavy-chat-pin-request-message">{{{messageContent}}}</div>
+    </div>
+</div>
+{{/if}}

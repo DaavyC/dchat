@@ -16,6 +16,7 @@ import {
 
 let refreshPinsUi = () => {};
 const i18nKey = key => `daavy-chat.${key}`;
+const TEMPLATE_PATH = `modules/${MODULE_ID}/templates/main.hbs`;
 
 export function setPinRefreshHandler(handler) {
     refreshPinsUi = typeof handler === "function" ? handler : refreshPinsUi;
@@ -99,10 +100,10 @@ export class ChatPins {
         toolbar.querySelectorAll(CHAT_SELECTORS.PIN_MANAGER).forEach(button => button.remove());
     }
 
-    static showManager(activeTab = null) {
+    static async showManager(activeTab = null) {
         const dialog = new foundry.applications.api.DialogV2({
             window: { title: game.i18n.localize(i18nKey("Pin.Manager")) },
-            content: this._buildManagerContent(activeTab),
+            content: await this._renderManagerContent(activeTab),
             buttons: [{ action: "close", label: "Close" }]
         });
 
@@ -110,48 +111,38 @@ export class ChatPins {
         dialog.render({ force: true });
     }
 
-    static _buildManagerContent(activeTab = null) {
+    static async _renderManagerContent(activeTab = null) {
         const pinnedMessages = this.getPinnedMessages();
         const selectedTab = this._getManagerActiveTab(pinnedMessages, activeTab);
         const activeMessages = pinnedMessages.filter(message => classifyMessage(message) === selectedTab);
-        const tabButtons = CHAT_TAB_CONFIG.map(tab => this._buildManagerTab(tab, pinnedMessages, selectedTab)).join("");
-        const body = activeMessages.length
-            ? activeMessages.map(message => this._buildManagerItem(message)).join("")
-            : `<p class="daavy-chat-pin-manager-empty">${game.i18n.localize(i18nKey("Pin.ManagerEmpty"))}</p>`;
 
-        return `
-            <div class="daavy-chat-pin-manager-content" data-daavy-chat-pin-active-tab="${selectedTab}">
-                <nav class="daavy-chat-pin-manager-tabs" aria-label="${game.i18n.localize(i18nKey("Pin.Manager"))}">
-                    ${tabButtons}
-                </nav>
-                <div class="daavy-chat-pin-manager-actions">
-                    ${activeMessages.length ? `<button type="button" class="daavy-chat-pin-manager-unpin-all">${game.i18n.localize(i18nKey("Pin.ManagerUnpinAll"))}</button>` : ""}
-                </div>
-                <section class="daavy-chat-pin-manager-list">
-                    ${body}
-                </section>
-            </div>
-        `;
+        return renderTemplate(TEMPLATE_PATH, {
+            pinManager: true,
+            activeTab: selectedTab,
+            managerLabel: game.i18n.localize(i18nKey("Pin.Manager")),
+            unpinAllLabel: game.i18n.localize(i18nKey("Pin.ManagerUnpinAll")),
+            unpinLabel: game.i18n.localize(i18nKey("Pin.Unpin")),
+            emptyLabel: game.i18n.localize(i18nKey("Pin.ManagerEmpty")),
+            tabs: CHAT_TAB_CONFIG.map(tab => ({
+                id: tab.id,
+                icon: tab.icon,
+                label: game.i18n.localize(tab.label),
+                active: tab.id === selectedTab,
+                count: pinnedMessages.filter(message => classifyMessage(message) === tab.id).length
+            })),
+            messages: activeMessages.map(message => ({
+                id: message.id,
+                author: this._getMessageAuthor(message) || message.id,
+                time: this._getMessageTime(message),
+                preview: this._getTextPreview(message.content)
+            }))
+        });
     }
 
     static _getManagerActiveTab(pinnedMessages, activeTab = null) {
         if (CHAT_TAB_CONFIG.some(tab => tab.id === activeTab)) return activeTab;
         if (pinnedMessages.some(message => classifyMessage(message) === MESSAGE_TYPES.CHAT)) return MESSAGE_TYPES.CHAT;
         return CHAT_TAB_CONFIG.find(tab => pinnedMessages.some(message => classifyMessage(message) === tab.id))?.id ?? MESSAGE_TYPES.CHAT;
-    }
-
-    static _buildManagerTab(tab, pinnedMessages, activeTab) {
-        const count = pinnedMessages.filter(message => classifyMessage(message) === tab.id).length;
-        const label = game.i18n.localize(tab.label);
-        const active = tab.id === activeTab;
-
-        return `
-            <button type="button" class="daavy-chat-pin-manager-tab${active ? " active" : ""}" data-daavy-chat-pin-tab="${tab.id}" aria-pressed="${active}">
-                <i class="fas ${tab.icon}"></i>
-                <span>${label}</span>
-                <span class="daavy-chat-pin-manager-count">${count}</span>
-            </button>
-        `;
     }
 
     static _refreshContainer(container) {
@@ -207,55 +198,36 @@ export class ChatPins {
         metadata.insertBefore(toggle, deleteButton ?? metadata.firstChild);
     }
 
-    static _buildManagerItem(message) {
-        const author = this._escapeHtml(this._getMessageAuthor(message) || message.id);
-        const time = this._escapeHtml(this._getMessageTime(message));
-        const preview = this._escapeHtml(this._getTextPreview(message.content));
-
-        return `
-            <article class="daavy-chat-pin-manager-item">
-                <div class="daavy-chat-pin-manager-item-body">
-                    <header>
-                        <strong>${author}</strong>
-                        ${time ? `<span>${time}</span>` : ""}
-                    </header>
-                    <div class="daavy-chat-pin-manager-preview">${preview}</div>
-                </div>
-                <button type="button" data-daavy-chat-unpin="${this._escapeHtml(message.id)}">${game.i18n.localize(i18nKey("Pin.Unpin"))}</button>
-            </article>
-        `;
-    }
-
     static _bindManagerContent(dialog) {
         const content = dialog?.element?.querySelector(".daavy-chat-pin-manager-content");
         if (!content) return;
 
         content.querySelectorAll("[data-daavy-chat-pin-tab]").forEach(button => {
-            button.addEventListener("click", () => {
-                this._refreshManagerDialog(dialog, button.dataset.daavyChatPinTab);
+            button.addEventListener("click", async () => {
+                await this._refreshManagerDialog(dialog, button.dataset.daavyChatPinTab);
             });
         });
 
         content.querySelector(".daavy-chat-pin-manager-unpin-all")?.addEventListener("click", async () => {
             const activeTab = content.dataset.daavyChatPinActiveTab;
             await this.unpinMessages(this.getPinnedMessages().filter(message => classifyMessage(message) === activeTab));
-            this._refreshManagerDialog(dialog, activeTab);
+            await this._refreshManagerDialog(dialog, activeTab);
         });
 
         content.querySelectorAll("[data-daavy-chat-unpin]").forEach(button => {
             button.addEventListener("click", async () => {
                 const message = game.messages.get(button.dataset.daavyChatUnpin);
                 await this.unpinMessages(message ? [message] : []);
-                this._refreshManagerDialog(dialog, content.dataset.daavyChatPinActiveTab);
+                await this._refreshManagerDialog(dialog, content.dataset.daavyChatPinActiveTab);
             });
         });
     }
 
-    static _refreshManagerDialog(dialog, activeTab = null) {
+    static async _refreshManagerDialog(dialog, activeTab = null) {
         const contentContainer = dialog?.element?.querySelector(".dialog-content");
         if (!contentContainer) return;
 
-        contentContainer.innerHTML = this._buildManagerContent(activeTab);
+        contentContainer.innerHTML = await this._renderManagerContent(activeTab);
         this._bindManagerContent(dialog);
     }
 
@@ -332,10 +304,10 @@ export class ChatPins {
         }
 
         this.pendingRequest = request;
-        this._showPinRequestDialog(request);
+        await this._showPinRequestDialog(request);
     }
 
-    static _showPinRequestDialog(request) {
+    static async _showPinRequestDialog(request) {
         const resolveRequest = async (status) => {
             if (this.pendingRequest?.requestId !== request.requestId) return;
             this.pendingRequest = null;
@@ -349,7 +321,15 @@ export class ChatPins {
         new foundry.applications.api.DialogV2({
             window: { title: game.i18n.localize(i18nKey("Pin.RequestTitle")) },
             modal: true,
-            content: this._buildPinRequestContent(request),
+            content: await renderTemplate(TEMPLATE_PATH, {
+                pinRequest: true,
+                requesterLabel: game.i18n.localize(i18nKey("Pin.Requester")),
+                requesterName: request.requesterName,
+                author: request.messageAuthor,
+                to: request.messageTo,
+                time: request.messageTime,
+                messageContent: request.messageContent ?? ""
+            }),
             buttons: [
                 {
                     action: "approved",
@@ -380,26 +360,6 @@ export class ChatPins {
         } catch {
             return false;
         }
-    }
-
-    static _buildPinRequestContent(request) {
-        const author = this._escapeHtml(request.messageAuthor);
-        const to = this._escapeHtml(request.messageTo);
-        const time = this._escapeHtml(request.messageTime);
-
-        return `
-            <div class="daavy-chat-pin-request">
-                <p class="daavy-chat-pin-requester"><strong>${game.i18n.localize(i18nKey("Pin.Requester"))}</strong> ${this._escapeHtml(request.requesterName)}</p>
-                <div class="daavy-chat-pin-request-preview">
-                    <header>
-                        ${author ? `<strong>${author}</strong>` : ""}
-                        ${time ? `<span>${time}</span>` : ""}
-                    </header>
-                    ${to ? `<div class="daavy-chat-pin-request-to">To: ${to}</div>` : ""}
-                    <div class="daavy-chat-pin-request-message">${request.messageContent ?? ""}</div>
-                </div>
-            </div>
-        `;
     }
 
     static _getMessageAuthor(message) {
@@ -441,16 +401,6 @@ export class ChatPins {
 
     static _getPinRequestGm() {
         return game.users.contents.find(user => user.active && user.isGM) ?? null;
-    }
-
-    static _escapeHtml(value) {
-        return String(value ?? "").replace(/[&<>"']/g, character => ({
-            "&": "&amp;",
-            "<": "&lt;",
-            ">": "&gt;",
-            "\"": "&quot;",
-            "'": "&#39;"
-        }[character]));
     }
 }
 
