@@ -7,11 +7,11 @@ import { HideChatInitiative } from "./features/hide-chat-initiative.js";
 import { HidePrivateMessages } from "./features/hide-private-messages.js";
 import {
     ChatClearControls,
+    ChatPins,
     ChatTabsManager,
     addChatNotification,
     cleanupMessage,
     initializeFeatures,
-    preventPinnedMessageDelete,
     processFeatures,
     refreshChatUi,
     scheduleChatUiRefresh
@@ -24,6 +24,7 @@ export function registerDaavyChatHooks() {
 
     Hooks.once("ready", () => {
         AutocompleteWhisper.onReady();
+        ChatPins.onReady();
         HidePrivateMessages.onReady();
     });
 
@@ -75,7 +76,7 @@ export function registerDaavyChatHooks() {
     Hooks.on("renderChatMessageHTML", processFeatures);
     Hooks.on("createChatMessage", addChatNotification);
     Hooks.on("updateChatMessage", scheduleChatUiRefresh);
-    Hooks.on("preDeleteChatMessage", preventPinnedMessageDelete);
+    Hooks.on("preDeleteChatMessage", ChatPins.preDeleteMessage);
 
     Hooks.on("preCreateChatMessage", (message, creationData) => {
         return HideChatInitiative.preCreateChatMessage(message, creationData);

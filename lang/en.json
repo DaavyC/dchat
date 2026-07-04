@@ -35,8 +35,21 @@
   "daavy-chat.Clear.Title": "Clear {label}",
   "daavy-chat.Clear.Confirm": "Delete <strong>{count}</strong> message(s) from <strong>{label}</strong>?",
   "daavy-chat.Clear.Success": "{label}: {count} message(s) cleared.",
-  "daavy-chat.Clear.Tooltip": "Clear active tab (SHIFT to clear all)",
+  "daavy-chat.Clear.Tooltip": "Clear active tab (SHIFT all)",
   "daavy-chat.Pin.Pin": "Pin message",
   "daavy-chat.Pin.Unpin": "Unpin message",
-  "daavy-chat.Pin.DeletePinned": "Pinned messages cannot be deleted."
+  "daavy-chat.Pin.Manager": "Pin Manager",
+  "daavy-chat.Pin.ManagerEmpty": "No pinned messages.",
+  "daavy-chat.Pin.ManagerUnpinAll": "Unpin all",
+  "daavy-chat.Pin.DeletePinned": "Pinned messages cannot be deleted.",
+  "daavy-chat.Pin.Request": "Request pin",
+  "daavy-chat.Pin.RequestTitle": "Pin Request",
+  "daavy-chat.Pin.Requester": "Requested by:",
+  "daavy-chat.Pin.Accept": "Accept",
+  "daavy-chat.Pin.Deny": "Deny",
+  "daavy-chat.Pin.Busy": "A pin request is already in progress.",
+  "daavy-chat.Pin.NoGm": "No active GM is available for pin requests.",
+  "daavy-chat.Pin.Sent": "Pin request sent.",
+  "daavy-chat.Pin.Approved": "Pin request approved.",
+  "daavy-chat.Pin.Denied": "Pin request denied."
 }

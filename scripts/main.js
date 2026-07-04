@@ -6,7 +6,6 @@ import {
     CHAT_TAB_CONFIG,
     FEATURE_CLASSES,
     MESSAGE_TYPES,
-    MODULE_ID,
     SETTING_KEYS
 } from "./config.js";
 import { isSettingEnabled, registerModuleSettings } from "./settings.js";
@@ -16,13 +15,15 @@ import {
     getDocument,
     getElement,
     isPinnedMessage,
-    registerCleanup,
     rememberMessageElement
 } from "./utils.js";
 import { AutocompleteWhisper } from "./features/autocomplete-whisper.js";
 import { CollapsibleFormula } from "./features/cleaner-chat.js";
 import { HidePrivateMessages } from "./features/hide-private-messages.js";
+import { ChatPins, setPinRefreshHandler } from "./features/pins.js";
 import { HideDamageButtons, TraitFilter } from "./features/pf2e-only.js";
+
+export { ChatPins } from "./features/pins.js";
 
 export class ChatClearControls {
     static _observers = new WeakMap();
@@ -32,7 +33,9 @@ export class ChatClearControls {
     }
 
     static scheduleRefresh(element = null) {
-        requestAnimationFrame(() => this.refresh(element));
+        const refresh = () => this.refresh(element);
+        if (typeof requestAnimationFrame === "function") requestAnimationFrame(refresh);
+        else refresh();
     }
 
     static refresh(element = null) {
@@ -89,6 +92,7 @@ export class ChatClearControls {
 
         const scopedButtons = Array.from(toolbar.querySelectorAll(CHAT_SELECTORS.SCOPED_CLEAR));
         if (!game.user?.isGM) {
+            ChatPins.removeManagerButtons(toolbar);
             scopedButtons.forEach(button => button.remove());
             return;
         }
@@ -100,6 +104,7 @@ export class ChatClearControls {
         const clearButton = scopedButton ?? this._createScopedClearButton(documentRef);
         this._getFoundryClearButton(element)?.remove();
 
+        ChatPins.injectManagerButton(toolbar, documentRef);
         if (!toolbar.contains(clearButton)) {
             toolbar.appendChild(clearButton);
         }
@@ -161,112 +166,6 @@ export class ChatClearControls {
     }
 }
 
-export class ChatPins {
-    static pinTypes = new Set([MESSAGE_TYPES.CHAT, MESSAGE_TYPES.GAME]);
-
-    static processMessage(message, renderedHtml) {
-        const element = getElement(renderedHtml);
-        if (!element) return;
-
-        const messageType = classifyMessage(message);
-        const pinned = isPinnedMessage(message);
-        this._setPinnedState(element, pinned);
-
-        if (!this._canPin(message, messageType)) return;
-        this._injectToggle(message, element, pinned);
-    }
-
-    static refresh(element = null) {
-        const container = getElement(element);
-        if (container) {
-            this._refreshContainer(container);
-            return;
-        }
-
-        ChatTabsManager._getTrackedContainers().forEach(trackedContainer => this._refreshContainer(trackedContainer));
-    }
-
-    static scheduleRefresh(element = null) {
-        const refresh = () => this.refresh(element);
-        if (typeof requestAnimationFrame === "function") requestAnimationFrame(refresh);
-        else refresh();
-    }
-
-    static preDeleteMessage(message) {
-        if (!isPinnedMessage(message)) return;
-
-        globalThis.ui?.notifications?.warn?.(game.i18n.localize(CHAT_I18N.DELETE_PINNED));
-        return false;
-    }
-
-    static _refreshContainer(container) {
-        const messageList = ChatTabsManager._getMessageList(container);
-        if (!messageList) return;
-
-        const messageElements = Array.from(messageList.querySelectorAll(CHAT_SELECTORS.MESSAGE_ID));
-        const pinnedElements = messageElements.filter(messageElement => {
-            const message = game.messages.get(messageElement.dataset.messageId);
-            const pinned = isPinnedMessage(message);
-            this._setPinnedState(messageElement, pinned);
-            return pinned;
-        });
-
-        pinnedElements.reverse().forEach(messageElement => messageList.prepend(messageElement));
-    }
-
-    static _canPin(message, messageType) {
-        return !!game.user?.isGM && !!message?.setFlag && this.pinTypes.has(messageType);
-    }
-
-    static _injectToggle(message, messageElement, pinned) {
-        const metadata = messageElement.querySelector(CHAT_SELECTORS.MESSAGE_METADATA);
-        if (!metadata || metadata.querySelector(CHAT_SELECTORS.PIN_TOGGLE)) return;
-
-        const toggle = getDocument(metadata).createElement("a");
-        toggle.className = CHAT_CLASSES.PIN_TOGGLE;
-        toggle.tabIndex = 0;
-        toggle.setAttribute("role", "button");
-
-        const togglePinned = async (event) => {
-            event.preventDefault();
-            event.stopPropagation();
-            await message.setFlag(MODULE_ID, "pinned", isPinnedMessage(message) ? null : true);
-            this.scheduleRefresh();
-        };
-        const signal = registerCleanup(messageElement);
-
-        toggle.addEventListener("click", togglePinned, { signal });
-        toggle.addEventListener("keydown", (event) => {
-            if (event.key === "Enter" || event.key === " ") togglePinned(event);
-        }, { signal });
-
-        this._syncToggle(toggle, pinned);
-
-        const deleteButton = metadata.querySelector(CHAT_SELECTORS.MESSAGE_DELETE);
-        metadata.insertBefore(toggle, deleteButton ?? metadata.firstChild);
-    }
-
-    static _setPinnedState(messageElement, pinned) {
-        messageElement.classList.toggle(CHAT_CLASSES.PINNED, pinned);
-        if (pinned) {
-            messageElement.setAttribute(`data-${CHAT_DATA.PINNED}`, "true");
-        } else {
-            messageElement.removeAttribute(`data-${CHAT_DATA.PINNED}`);
-        }
-
-        const toggle = messageElement.querySelector(CHAT_SELECTORS.PIN_TOGGLE);
-        if (toggle) this._syncToggle(toggle, pinned);
-    }
-
-    static _syncToggle(toggle, pinned) {
-        const label = game.i18n.localize(pinned ? CHAT_I18N.UNPIN : CHAT_I18N.PIN);
-        toggle.classList.toggle(CHAT_CLASSES.ACTIVE, pinned);
-        toggle.dataset.tooltip = label;
-        toggle.title = label;
-        toggle.setAttribute("aria-label", label);
-        toggle.innerHTML = `<i class="fas fa-thumbtack"></i>`;
-    }
-}
 
 export class ChatTabsManager {
     static _localizedLabels = null;
@@ -290,7 +189,9 @@ export class ChatTabsManager {
     }
 
     static scheduleRefresh(element = null) {
-        requestAnimationFrame(() => this.refresh(element));
+        const refresh = () => this.refresh(element);
+        if (typeof requestAnimationFrame === "function") requestAnimationFrame(refresh);
+        else refresh();
     }
 
     static _pruneContainers() {
@@ -486,6 +387,7 @@ const messageFeatures = [
 
 export function initializeFeatures() {
     registerModuleSettings();
+    setPinRefreshHandler(scheduleChatUiRefresh);
     AutocompleteWhisper.init();
 }
 
@@ -521,8 +423,4 @@ export function addChatNotification(message) {
 
 export function cleanupMessage(message) {
     cleanupDeletedMessage(message);
-}
-
-export function preventPinnedMessageDelete(message) {
-    return ChatPins.preDeleteMessage(message);
 }

@@ -120,6 +120,7 @@ export const CHAT_SELECTORS = {
     MESSAGE_METADATA: ".message-metadata",
     MESSAGE_DELETE: ".message-delete",
     PIN_TOGGLE: ".daavy-chat-pin-toggle",
+    PIN_MANAGER: ".daavy-chat-pin-manager",
     SCOPED_CLEAR: ".daavy-chat-scoped-clear",
     PIP: ".daavy-chat-pip"
 };
@@ -132,14 +133,14 @@ export const CHAT_CLASSES = {
     PIP: "daavy-chat-pip",
     PINNED: "daavy-chat-pinned",
     PIN_TOGGLE: "daavy-chat-pin-toggle",
+    PIN_MANAGER: "ui-control icon fas fa-thumbtack daavy-chat-pin-manager",
     SCOPED_CLEAR: "ui-control icon fas fa-trash daavy-chat-scoped-clear",
     FILTER_PREFIX: "daavy-chat-filter"
 };
 
 export const CHAT_DATA = {
     TAB: "daavyChatTab",
-    TYPE: "daavy-chat-type",
-    PINNED: "daavy-chat-pinned"
+    TYPE: "daavy-chat-type"
 };
 
 export const CHAT_I18N = {
@@ -152,7 +153,20 @@ export const CHAT_I18N = {
     CLEAR_CONFIRM: "daavy-chat.Clear.Confirm",
     PIN: "daavy-chat.Pin.Pin",
     UNPIN: "daavy-chat.Pin.Unpin",
-    DELETE_PINNED: "daavy-chat.Pin.DeletePinned"
+    MANAGER: "daavy-chat.Pin.Manager",
+    MANAGER_EMPTY: "daavy-chat.Pin.ManagerEmpty",
+    MANAGER_UNPIN_ALL: "daavy-chat.Pin.ManagerUnpinAll",
+    DELETE_PINNED: "daavy-chat.Pin.DeletePinned",
+    PIN_REQUEST: "daavy-chat.Pin.Request",
+    PIN_REQUEST_TITLE: "daavy-chat.Pin.RequestTitle",
+    PIN_REQUEST_REQUESTER: "daavy-chat.Pin.Requester",
+    PIN_REQUEST_ACCEPT: "daavy-chat.Pin.Accept",
+    PIN_REQUEST_DENY: "daavy-chat.Pin.Deny",
+    PIN_REQUEST_BUSY: "daavy-chat.Pin.Busy",
+    PIN_REQUEST_NO_GM: "daavy-chat.Pin.NoGm",
+    PIN_REQUEST_SENT: "daavy-chat.Pin.Sent",
+    PIN_REQUEST_APPROVED: "daavy-chat.Pin.Approved",
+    PIN_REQUEST_DENIED: "daavy-chat.Pin.Denied"
 };
 
 export const AUTOCOMPLETE_WHISPER = {

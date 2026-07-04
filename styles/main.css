@@ -56,6 +56,203 @@
     display: none !important;
 }
 
+.daavy-chat-pin-request {
+    display: grid;
+    gap: 8px;
+}
+
+.daavy-chat-pin-requester {
+    margin: 0;
+}
+
+.daavy-chat-pin-request-preview {
+    max-height: 160px;
+    overflow-y: auto;
+    padding: 6px 8px;
+    color: #111;
+    background: #c9c9d1;
+    border: 1px solid rgba(0, 0, 0, 0.25);
+    border-radius: 3px;
+}
+
+.daavy-chat-pin-request-preview header {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    line-height: 1.1;
+}
+
+.daavy-chat-pin-request-preview header span,
+.daavy-chat-pin-request-to {
+    font-size: var(--font-size-12, 12px);
+}
+
+.daavy-chat-pin-request-to {
+    color: #2b225c;
+}
+
+.daavy-chat-pin-request-message {
+    margin-top: 6px;
+}
+
+button.daavy-chat-pin-accept,
+.daavy-chat-pin-accept {
+    color: #f4fff5;
+    background: #236c35;
+    border-color: #45a85b;
+}
+
+button.daavy-chat-pin-accept:hover {
+    background: #2f8846;
+}
+
+button.daavy-chat-pin-deny,
+.daavy-chat-pin-deny {
+    color: #fff6f6;
+    background: #7f2424;
+    border-color: #c64b4b;
+}
+
+button.daavy-chat-pin-deny:hover {
+    background: #9b3030;
+}
+
+.daavy-chat-pin-manager-content {
+    display: grid;
+    gap: 12px;
+    min-width: min(560px, 80vw);
+}
+
+.daavy-chat-pin-manager-tabs {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 4px;
+    border-bottom: 1px solid var(--color-border-light-primary, #a1a1a1);
+}
+
+.daavy-chat-pin-manager-tab {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 42px;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    color: var(--color-text-secondary, inherit);
+}
+
+.daavy-chat-pin-manager-tab:hover,
+.daavy-chat-pin-manager-tab:focus,
+.daavy-chat-pin-manager-tab:focus-visible,
+.daavy-chat-pin-manager-tab:active {
+    border: 0;
+    outline: none;
+    box-shadow: none;
+    background: transparent;
+}
+
+.daavy-chat-pin-manager-tab.active {
+    color: var(--color-text-primary, inherit);
+    border: 0;
+    border-bottom: 2px solid var(--color-text-primary, currentColor);
+    outline: none;
+    box-shadow: none;
+}
+
+.daavy-chat-pin-manager-count {
+    min-width: 1.6em;
+    padding: 1px 6px;
+    border-radius: 999px;
+    background: var(--color-bg-option, rgba(255, 255, 255, 0.08));
+    text-align: center;
+    font-size: var(--font-size-12, 12px);
+}
+
+.daavy-chat-pin-manager-actions {
+    min-height: 32px;
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+}
+
+.daavy-chat-pin-manager-unpin-all {
+    width: auto;
+    color: #fff6f6;
+    background: #7f2424;
+    border-color: #c64b4b;
+}
+
+.daavy-chat-pin-manager-unpin-all:hover {
+    background: #9b3030;
+}
+
+.daavy-chat-pin-manager-list {
+    display: grid;
+    gap: 8px;
+    max-height: min(55vh, 390px);
+    overflow-y: auto;
+    padding-right: 4px;
+}
+
+.daavy-chat-pin-manager-empty {
+    margin: 0;
+    color: var(--color-text-secondary, inherit);
+}
+
+.daavy-chat-pin-manager-item {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 10px;
+    align-items: start;
+    padding: 10px;
+    border: 1px solid var(--color-border-light-primary, #a1a1a1);
+    border-radius: 6px;
+}
+
+.daavy-chat-pin-manager-item-body {
+    min-width: 0;
+}
+
+.daavy-chat-pin-manager-item-body header {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    align-items: baseline;
+}
+
+.daavy-chat-pin-manager-item-body header span {
+    color: var(--color-text-secondary, inherit);
+    font-size: var(--font-size-12, 12px);
+}
+
+.daavy-chat-pin-manager-preview {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.daavy-chat-pin-manager-item button {
+    width: auto;
+    color: #fff6f6;
+    background: #7f2424;
+    border-color: #c64b4b;
+}
+
+.daavy-chat-pin-manager-item button:hover {
+    background: #9b3030;
+}
+
+dialog:has(.daavy-chat-pin-manager-content) .form-footer button[data-action="close"] {
+    color: #f4fff5;
+    background: #236c35;
+    border-color: #45a85b;
+}
+
+dialog:has(.daavy-chat-pin-manager-content) .form-footer button[data-action="close"]:hover {
+    background: #2f8846;
+}
+
 .daavy-chat-tab-bar {
     position: relative;
     z-index: 10;

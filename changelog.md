@@ -1,5 +1,7 @@
 ##### 1.6.0
 - Added Chat Pins
+- Chat Pins: Players can now pin GM requests in the Whisper tab
+- Chat Pins: Pin Manager button for managing pins across all tabs
 
 ##### 1.5.1
 - Removed the option to reset the settings
