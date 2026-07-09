@@ -74,7 +74,7 @@ function registerBooleanSetting({ key, ...options }) {
     game.settings.register(MODULE_ID, key, {
         scope: "client",
         config: true,
-        default: getSettingDefault(options),
+        default: options.default ?? false,
         type: Boolean,
         ...options
     });
@@ -82,8 +82,4 @@ function registerBooleanSetting({ key, ...options }) {
 
 export function isSettingEnabled(key) {
     return game.settings.get(MODULE_ID, key);
-}
-
-function getSettingDefault(options) {
-    return options.default ?? false;
 }

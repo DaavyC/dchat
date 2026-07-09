@@ -1,5 +1,5 @@
 import { SETTING_KEYS } from "../config.js";
-import { createAbortController, getDocument, getElement, randomId, removeAttributes } from "../utils.js";
+import { createAbortController, getDocument, getElement, randomId } from "../utils.js";
 import { isSettingEnabled } from "../settings.js";
 
 const AUTOCOMPLETE_WHISPER = {
@@ -559,7 +559,7 @@ function prepareEditable(editable, popupId) {
 }
 
 function clearEditableState(editable) {
-    removeAttributes(editable, ...AUTOCOMPLETE_WHISPER.EDITABLE_ARIA_ATTRIBUTES);
+    AUTOCOMPLETE_WHISPER.EDITABLE_ARIA_ATTRIBUTES.forEach(attribute => editable.removeAttribute(attribute));
 }
 
 function renderPopup(state) {
@@ -576,7 +576,7 @@ function hidePopup(state) {
     state.popup.classList.remove(AUTOCOMPLETE_WHISPER.VISIBLE_CLASS);
     state.popup.replaceChildren();
     state.editable.setAttribute("aria-expanded", "false");
-    removeAttributes(state.editable, "aria-activedescendant");
+    state.editable.removeAttribute("aria-activedescendant");
     state.suggestions = [];
     state.activeIndex = 0;
     state.match = null;

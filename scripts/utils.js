@@ -54,21 +54,9 @@ export function getChatSection(renderedHtml) {
     return element.querySelector(CHAT_SELECTORS.SECTION);
 }
 
-export function getProperty(sourceObject, path) {
-    return foundry.utils.getProperty(sourceObject, path);
-}
-
-export function expandObject(flattenedData) {
-    return foundry.utils.expandObject(flattenedData);
-}
-
 export function randomId() {
     const foundryRandomId = foundry.utils.randomID;
     return typeof foundryRandomId === "function" ? foundryRandomId() : Math.random().toString(36).slice(2);
-}
-
-export function removeAttributes(element, ...attributes) {
-    attributes.forEach(attribute => element?.removeAttribute(attribute));
 }
 
 const cleanupEntries = new WeakMap();
