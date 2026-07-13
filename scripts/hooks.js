@@ -10,7 +10,6 @@ import {
     ChatPins,
     ChatTabsManager,
     addChatNotification,
-    cleanupMessage,
     initializeFeatures,
     processFeatures,
     refreshChatUi,
@@ -23,7 +22,6 @@ export function registerDaavyChatHooks() {
     });
 
     Hooks.once("ready", () => {
-        AutocompleteWhisper.onReady();
         ChatPins.onReady();
         HidePrivateMessages.onReady();
     });
@@ -77,6 +75,4 @@ export function registerDaavyChatHooks() {
     Hooks.on("preCreateChatMessage", (message, creationData) => {
         return HideChatInitiative.preCreateChatMessage(message, creationData);
     });
-
-    Hooks.on("deleteChatMessage", cleanupMessage);
 }

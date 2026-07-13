@@ -38,10 +38,6 @@ A simple module for **Foundry VTT** that organizes the chat log into tabs and ad
 - **Hide Damage Traits** — Hides damage-roll traits.
 - **Trait Filter** — Filters traits and shows up to three.
 
-### Advanced
-
-- **Debug** — Shows debug logs.
-
 ## 🛠️ Compatibility
 
 - **Foundry VTT**: Version 14

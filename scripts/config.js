@@ -59,13 +59,6 @@ export const SETTINGS = {
         key: "hideDamageButtons",
         name: "daavy-chat.Settings.HideDamageButtons.Name",
         hint: "daavy-chat.Settings.HideDamageButtons.Hint"
-    },
-    DEBUG: {
-        key: "debug",
-        name: "daavy-chat.Settings.Debug.Name",
-        hint: "daavy-chat.Settings.Debug.Hint",
-        scope: "world",
-        restricted: true
     }
 };
 
@@ -87,9 +80,6 @@ export const SETTING_GROUPS = Object.freeze({
         SETTINGS.HIDE_DAMAGE_BUTTONS.key,
         SETTINGS.HIDE_DAMAGE_TRAITS.key,
         SETTINGS.TRAIT_FILTER.key
-    ],
-    Advanced: [
-        SETTINGS.DEBUG.key
     ]
 });
 
@@ -112,7 +102,6 @@ export const CHAT_SELECTORS = {
     CONTROLS: "#chat-controls",
     FORM: "#chat-form, form.chat-form",
     FOUNDRY_CLEAR_BUTTON: 'button[data-action="flush"]',
-    FOUNDRY_CLEAR_ICON: ".fa-trash, .fa-trash-can",
     MESSAGE_LIST: "#chat-log, .chat-log, ol.chat-messages, [class*='chat-log']",
     TAB_BAR: ".daavy-chat-tab-bar",
     TAB_BUTTON: ".daavy-chat-tab-bar .daavy-chat-tab",

@@ -1,5 +1,5 @@
 import { SETTING_KEYS } from "../config.js";
-import { createAbortController, getDocument, getElement, randomId } from "../utils.js";
+import { createAbortController, getDocument, getElement } from "../utils.js";
 import { isSettingEnabled } from "../settings.js";
 
 const AUTOCOMPLETE_WHISPER = {
@@ -36,11 +36,6 @@ export class AutocompleteWhisper {
     static _boundFocusDocuments = new WeakSet();
 
     static init() {
-        this._bindGlobalFocusListener();
-        this._scheduleRefresh();
-    }
-
-    static onReady() {
         this._bindGlobalFocusListener();
         this._scheduleRefresh();
     }
@@ -120,10 +115,17 @@ export class AutocompleteWhisper {
 
         const editor = resolveEditor(host);
         const editable = resolveEditable(editor);
-        if (!this._canAttach(host, editor, editable)) return false;
+        if (!editor || !editable) {
+            this._teardown(host);
+            return false;
+        }
 
         if (this._states.has(host)) {
-            if (this._canReuseState(host, editor, editable)) {
+            const state = this._states.get(host);
+            if (state.editor?.isConnected
+                && state.editable?.isConnected
+                && state.editor === editor
+                && state.editable === editable) {
                 this._updateSuggestions(host);
                 return true;
             }
@@ -131,7 +133,16 @@ export class AutocompleteWhisper {
             this._teardown(host);
         }
 
-        const state = this._createState(host, editor, editable);
+        const state = {
+            controller: createAbortController(host),
+            host,
+            editor,
+            editable,
+            popup: createPopup(host),
+            suggestions: [],
+            activeIndex: 0,
+            match: null
+        };
         this._states.set(host, state);
         host.classList.add(AUTOCOMPLETE_WHISPER.HOST_CLASS);
         prepareEditable(editable, state.popup.id);
@@ -139,36 +150,6 @@ export class AutocompleteWhisper {
 
         this._updateSuggestions(host);
         return true;
-    }
-
-    static _canAttach(host, editor, editable) {
-        if (editor && editable) return true;
-
-        this._teardown(host);
-        return false;
-    }
-
-    static _canReuseState(host, editor, editable) {
-        const state = this._states.get(host);
-        return !!state?.editor?.isConnected
-            && !!state?.editable?.isConnected
-            && state.editor === editor
-            && state.editable === editable;
-    }
-
-    static _createState(host, editor, editable) {
-        const popup = createPopup(host);
-
-        return {
-            controller: createAbortController(host),
-            host,
-            editor,
-            editable,
-            popup,
-            suggestions: [],
-            activeIndex: 0,
-            match: null
-        };
     }
 
     static _bindStateEvents(state) {
@@ -190,7 +171,7 @@ export class AutocompleteWhisper {
             if (AUTOCOMPLETE_WHISPER.CARET_NAVIGATION_KEYS.includes(event.key)) refresh();
         }, { signal });
         editable.addEventListener("blur", () => {
-            requestAnimationFrame(() => this._hidePopup(host));
+            requestAnimationFrame(() => hidePopup(state));
         }, { signal });
     }
 
@@ -235,7 +216,7 @@ export class AutocompleteWhisper {
 
         state.match = getMatchState(state.editable);
         if (!state.match) {
-            this._hidePopup(host);
+            hidePopup(state);
             return;
         }
 
@@ -243,23 +224,11 @@ export class AutocompleteWhisper {
         state.activeIndex = Math.min(state.activeIndex, Math.max(state.suggestions.length - 1, 0));
 
         if (!state.suggestions.length) {
-            this._hidePopup(host);
+            hidePopup(state);
             return;
         }
 
-        this._renderPopup(host);
-    }
-
-    static _renderPopup(host) {
-        const state = this._states.get(host);
-        if (!state) return;
         renderPopup(state);
-    }
-
-    static _hidePopup(host) {
-        const state = this._states.get(host);
-        if (!state) return;
-        hidePopup(state);
     }
 
     static _onKeydown(host, event) {
@@ -270,12 +239,12 @@ export class AutocompleteWhisper {
             case "ArrowDown":
                 event.preventDefault();
                 state.activeIndex = (state.activeIndex + 1) % state.suggestions.length;
-                this._renderPopup(host);
+                renderPopup(state);
                 break;
             case "ArrowUp":
                 event.preventDefault();
                 state.activeIndex = (state.activeIndex - 1 + state.suggestions.length) % state.suggestions.length;
-                this._renderPopup(host);
+                renderPopup(state);
                 break;
             case "Enter":
             case "Tab":
@@ -284,7 +253,7 @@ export class AutocompleteWhisper {
                 break;
             case "Escape":
                 event.preventDefault();
-                this._hidePopup(host);
+                hidePopup(state);
                 break;
         }
     }
@@ -312,7 +281,7 @@ export class AutocompleteWhisper {
         const replacement = `[${recipients.join(", ")}]`;
         const spacer = /^\s/.test(textAfterMatch) ? "" : " ";
         replaceEditorRange(state, match.targetStart, match.targetEnd, `${replacement}${spacer}`);
-        this._hidePopup(host);
+        hidePopup(state);
     }
 }
 
@@ -463,59 +432,20 @@ function getBracketedMatch(editorText, targetStart, remainder, caret) {
     const innerStart = targetStart + 1;
     const innerEnd = closeIndex === -1 ? targetEnd : targetEnd - 1;
     const inside = editorText.slice(innerStart, innerEnd);
-    const segments = splitRecipientSegments(inside);
+    const segments = inside.split(",");
     const caretInside = Math.max(0, Math.min(caret - innerStart, inside.length));
-    const currentIndex = findCurrentSegmentIndex(segments, caretInside);
+    const currentIndex = inside.slice(0, caretInside).split(",").length - 1;
     const currentSegment = segments[currentIndex];
-    const trimmed = trimRecipientSegment(currentSegment);
 
     return {
-        query: currentSegment.text.slice(trimmed.leadingWhitespace, trimmed.trimmedEnd),
+        query: currentSegment.trim(),
         targetStart,
         targetEnd,
-        selectedNames: getSelectedNames(segments, currentIndex)
+        selectedNames: segments
+            .filter((_segment, index) => index !== currentIndex)
+            .map(segment => segment.trim())
+            .filter(Boolean)
     };
-}
-
-function splitRecipientSegments(recipientText) {
-    const segments = [];
-    let segmentStart = 0;
-
-    for (let index = 0; index <= recipientText.length; index += 1) {
-        const atEnd = index === recipientText.length;
-        if (!atEnd && recipientText[index] !== ",") continue;
-
-        segments.push({
-            start: segmentStart,
-            end: index,
-            text: recipientText.slice(segmentStart, index)
-        });
-        segmentStart = index + 1;
-    }
-
-    return segments.length ? segments : [{ start: 0, end: 0, text: "" }];
-}
-
-function findCurrentSegmentIndex(segments, caretInside) {
-    const index = segments.findIndex(segment => caretInside <= segment.end);
-    return index === -1 ? segments.length - 1 : index;
-}
-
-function trimRecipientSegment(segment) {
-    const leadingWhitespace = segment.text.match(/^\s*/)?.[0]?.length ?? 0;
-    const trailingWhitespace = segment.text.match(/\s*$/)?.[0]?.length ?? 0;
-
-    return {
-        leadingWhitespace,
-        trimmedEnd: Math.max(leadingWhitespace, segment.text.length - trailingWhitespace)
-    };
-}
-
-function getSelectedNames(segments, currentIndex) {
-    return segments
-        .filter((segment, index) => index !== currentIndex)
-        .map(segment => segment.text.trim())
-        .filter(Boolean);
 }
 
 function resolveHost(rootElement, hostSelector) {
@@ -544,7 +474,7 @@ function createPopup(host) {
     const documentRef = getDocument(host);
     const popup = documentRef.createElement("div");
     popup.className = AUTOCOMPLETE_WHISPER.POPUP_CLASS;
-    popup.id = `${AUTOCOMPLETE_WHISPER.POPUP_ID_PREFIX}-${randomId()}`;
+    popup.id = `${AUTOCOMPLETE_WHISPER.POPUP_ID_PREFIX}-${foundry.utils.randomID()}`;
     popup.hidden = true;
     popup.setAttribute("role", "listbox");
     host.appendChild(popup);
@@ -616,55 +546,28 @@ function updateActiveDescendant(state) {
 }
 
 export function getSuggestions(match, users, maxResults) {
-    const normalizedQuery = normalizeName(match.query);
-    const selectedNames = new Set(match.selectedNames.map(normalizeName));
-
-    return sortUsersByStatusAndName(getUniqueCandidateUsers(users, selectedNames))
-        .filter(user => matchesQuery(user, normalizedQuery))
-        .slice(0, maxResults)
-        .map(toSuggestion);
-}
-
-function normalizeName(name) {
-    return (name ?? "").trim().toLocaleLowerCase();
-}
-
-function getDisplayName(user) {
-    return user?.name?.trim() ?? "";
-}
-
-function getUniqueCandidateUsers(users, selectedNames) {
+    const normalize = name => (name ?? "").trim().toLocaleLowerCase();
+    const normalizedQuery = normalize(match.query);
+    const selectedNames = new Set(match.selectedNames.map(normalize));
     const seen = new Set();
 
-    return users.filter(user => {
-        const name = getDisplayName(user);
-        const normalizedName = normalizeName(name);
-        if (!name || !normalizedName || seen.has(normalizedName) || selectedNames.has(normalizedName)) return false;
+    return users
+        .filter(user => {
+            const name = user?.name?.trim() ?? "";
+            const normalizedName = normalize(name);
+            if (!name || seen.has(normalizedName) || selectedNames.has(normalizedName)) return false;
 
-        seen.add(normalizedName);
-        return true;
-    });
-}
-
-function sortUsersByStatusAndName(users) {
-    return users.sort((firstUser, secondUser) => {
-        const firstName = getDisplayName(firstUser);
-        const secondName = getDisplayName(secondUser);
-        if (firstUser.active !== secondUser.active) return firstUser.active ? -1 : 1;
-
-        return firstName.localeCompare(secondName, game.i18n.lang, { sensitivity: "base" });
-    });
-}
-
-function matchesQuery(user, normalizedQuery) {
-    const normalizedName = normalizeName(getDisplayName(user));
-    return !normalizedQuery || normalizedName.includes(normalizedQuery);
-}
-
-function toSuggestion(user) {
-    return {
-        id: user.id,
-        name: getDisplayName(user),
-        active: !!user.active
-    };
+            seen.add(normalizedName);
+            return !normalizedQuery || normalizedName.includes(normalizedQuery);
+        })
+        .sort((firstUser, secondUser) => {
+            if (firstUser.active !== secondUser.active) return firstUser.active ? -1 : 1;
+            return firstUser.name.trim().localeCompare(secondUser.name.trim(), game.i18n.lang, { sensitivity: "base" });
+        })
+        .slice(0, maxResults)
+        .map(user => ({
+            id: user.id,
+            name: user.name.trim(),
+            active: !!user.active
+        }));
 }

@@ -10,11 +10,9 @@ import {
 import { isSettingEnabled, registerModuleSettings } from "./settings.js";
 import {
     classifyMessage,
-    cleanupDeletedMessage,
     getDocument,
     getElement,
-    isPinnedMessage,
-    rememberMessageElement
+    isPinnedMessage
 } from "./utils.js";
 import { AutocompleteWhisper } from "./features/autocomplete-whisper.js";
 import { CollapsibleFormula } from "./features/cleaner-chat.js";
@@ -32,12 +30,6 @@ export class ChatClearControls {
 
     static observeChatLog(renderedHtml) {
         this._observeChatLog(getElement(renderedHtml));
-    }
-
-    static scheduleRefresh(element = null) {
-        const refresh = () => this.refresh(element);
-        if (typeof requestAnimationFrame === "function") requestAnimationFrame(refresh);
-        else refresh();
     }
 
     static refresh(element = null) {
@@ -132,9 +124,7 @@ export class ChatClearControls {
 
     static _getFoundryClearButton(element) {
         const controls = element.querySelector(CHAT_SELECTORS.CONTROLS);
-        return controls?.querySelector(CHAT_SELECTORS.FOUNDRY_CLEAR_BUTTON)
-            ?? controls?.querySelector(CHAT_SELECTORS.FOUNDRY_CLEAR_ICON)?.closest("button")
-            ?? null;
+        return controls?.querySelector(CHAT_SELECTORS.FOUNDRY_CLEAR_BUTTON) ?? null;
     }
 
     static _getClearLabel(clearAll) {
@@ -180,12 +170,6 @@ export class ChatTabsManager {
             icon: tab.icon,
             label: game.i18n.localize(tab.label)
         }));
-    }
-
-    static scheduleRefresh(element = null) {
-        const refresh = () => this.refresh(element);
-        if (typeof requestAnimationFrame === "function") requestAnimationFrame(refresh);
-        else refresh();
     }
 
     static _pruneContainers() {
@@ -386,7 +370,7 @@ export function initializeFeatures() {
 }
 
 export function processFeatures(message, renderedHtml) {
-    const element = rememberMessageElement(message, renderedHtml);
+    const element = getElement(renderedHtml);
     if (!element) return;
 
     element.setAttribute(`data-${CHAT_DATA.TYPE}`, classifyMessage(message));
@@ -402,21 +386,15 @@ export function processFeatures(message, renderedHtml) {
 
 export function refreshChatUi(element = null) {
     ChatTabsManager.refresh(element);
-    ChatClearControls.refresh(element);
 }
 
 export function scheduleChatUiRefresh() {
-    ChatTabsManager.scheduleRefresh();
-    ChatClearControls.scheduleRefresh();
+    requestAnimationFrame(() => refreshChatUi());
 }
 
 export function addChatNotification(message) {
     if (isSettingEnabled(SETTING_KEYS.HIDE_PRIVATE_MESSAGES) && HidePrivateMessages.shouldHideMessage(message)) return;
     ChatTabsManager.addNotification(classifyMessage(message));
-}
-
-export function cleanupMessage(message) {
-    cleanupDeletedMessage(message);
 }
 
 registerDaavyChatHooks();

@@ -1,6 +1,6 @@
 import { SETTING_KEYS } from "../config.js";
 import { isSettingEnabled } from "../settings.js";
-import { getElement, registerCleanup } from "../utils.js";
+import { getElement } from "../utils.js";
 
 const PROSE_MIRROR_SELECTOR = "prose-mirror[name='message']";
 const HIDE_CHAT_FORMATTING_CLASS = "daavy-chat-hide-chat-formatting";
@@ -55,8 +55,6 @@ export class CollapsibleFormula {
         const messageElement = getElement(renderedHtml);
         if (!messageElement) return;
 
-        const signal = registerCleanup(messageElement);
-
         messageElement.querySelectorAll(ROLL_SELECTOR).forEach(roll => {
             const title = roll.querySelector(ROLL_TITLE_SELECTOR);
             const formula = roll.querySelector(FORMULA_SELECTOR);
@@ -64,7 +62,7 @@ export class CollapsibleFormula {
                 title.addEventListener("click", (event) => {
                     event.stopPropagation();
                     formula.classList.toggle(SHOW_FORMULA_CLASS);
-                }, { signal });
+                });
             }
         });
     }

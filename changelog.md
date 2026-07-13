@@ -1,3 +1,6 @@
+##### 1.6.1 — WIP
+- Removed debug
+
 ##### 1.6.0
 - Added Chat Pins
 - Chat Pins: Players can now request message pins from GMs in the Whisper tab

@@ -9,9 +9,7 @@ import {
     classifyMessage,
     getDocument,
     getElement,
-    isPinnedMessage,
-    randomId,
-    registerCleanup
+    isPinnedMessage
 } from "../utils.js";
 
 let refreshPinsUi = () => {};
@@ -107,7 +105,7 @@ export class ChatPins {
             buttons: [{ action: "close", label: "Close" }]
         });
 
-        dialog.addEventListener?.("render", event => this._bindManagerContent(event.target));
+        dialog.addEventListener?.("render", event => this._bindManagerContent(event.target), { once: true });
         dialog.render({ force: true });
     }
 
@@ -185,12 +183,10 @@ export class ChatPins {
                 this.requestPin(message);
             }
         };
-        const signal = registerCleanup(messageElement);
-
-        toggle.addEventListener("click", togglePinned, { signal });
+        toggle.addEventListener("click", togglePinned);
         toggle.addEventListener("keydown", (event) => {
             if (event.key === "Enter" || event.key === " ") togglePinned(event);
-        }, { signal });
+        });
 
         this._syncToggle(toggle, pinned, mode);
 
@@ -199,27 +195,29 @@ export class ChatPins {
     }
 
     static _bindManagerContent(dialog) {
-        const content = dialog?.element?.querySelector(".daavy-chat-pin-manager-content");
-        if (!content) return;
+        dialog?.element?.addEventListener("click", async (event) => {
+            const content = event.target.closest(".daavy-chat-pin-manager-content");
+            if (!content) return;
 
-        content.querySelectorAll("[data-daavy-chat-pin-tab]").forEach(button => {
-            button.addEventListener("click", async () => {
-                await this._refreshManagerDialog(dialog, button.dataset.daavyChatPinTab);
-            });
-        });
+            const tabButton = event.target.closest("[data-daavy-chat-pin-tab]");
+            if (tabButton) {
+                await this._refreshManagerDialog(dialog, tabButton.dataset.daavyChatPinTab);
+                return;
+            }
 
-        content.querySelector(".daavy-chat-pin-manager-unpin-all")?.addEventListener("click", async () => {
             const activeTab = content.dataset.daavyChatPinActiveTab;
-            await this.unpinMessages(this.getPinnedMessages().filter(message => classifyMessage(message) === activeTab));
-            await this._refreshManagerDialog(dialog, activeTab);
-        });
+            if (event.target.closest(".daavy-chat-pin-manager-unpin-all")) {
+                await this.unpinMessages(this.getPinnedMessages().filter(message => classifyMessage(message) === activeTab));
+                await this._refreshManagerDialog(dialog, activeTab);
+                return;
+            }
 
-        content.querySelectorAll("[data-daavy-chat-unpin]").forEach(button => {
-            button.addEventListener("click", async () => {
-                const message = game.messages.get(button.dataset.daavyChatUnpin);
-                await this.unpinMessages(message ? [message] : []);
-                await this._refreshManagerDialog(dialog, content.dataset.daavyChatPinActiveTab);
-            });
+            const unpinButton = event.target.closest("[data-daavy-chat-unpin]");
+            if (!unpinButton) return;
+
+            const message = game.messages.get(unpinButton.dataset.daavyChatUnpin);
+            await this.unpinMessages(message ? [message] : []);
+            await this._refreshManagerDialog(dialog, activeTab);
         });
     }
 
@@ -228,7 +226,6 @@ export class ChatPins {
         if (!contentContainer) return;
 
         contentContainer.innerHTML = await this._renderManagerContent(activeTab);
-        this._bindManagerContent(dialog);
     }
 
     static _setPinnedState(messageElement, pinned, mode = null) {
@@ -258,7 +255,7 @@ export class ChatPins {
 
         game.socket?.emit?.(`module.${MODULE_ID}`, {
             type: "pinRequest",
-            requestId: randomId(),
+            requestId: foundry.utils.randomID(),
             requesterId: game.user.id,
             requesterName: game.user.name,
             targetGmId: targetGm.id,

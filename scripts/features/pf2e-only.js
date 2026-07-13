@@ -1,5 +1,5 @@
 import { PF2E_TRAITS_TO_HIDE } from "../config.js";
-import { getDocument, getElement, isCurrentUserAuthor, registerCleanup } from "../utils.js";
+import { getDocument, getElement, isCurrentUserAuthor } from "../utils.js";
 
 const PF2E_SELECTORS = {
     TRAIT_TAGS: '.tags .tag:is([data-trait], [data-slug]):not(.tag_transparent)[data-tooltip]',
@@ -76,8 +76,6 @@ export class TraitFilter {
                 if (index >= VISIBLE_TRAIT_LIMIT) tag.classList.add(PF2E_CLASSES.HIDDEN_TRAIT);
             });
 
-            const signal = registerCleanup(messageElement);
-
             container.addEventListener("click", (event) => {
                 const clickableTag = event.target.closest(PF2E_SELECTORS.CLICKABLE_TRAIT_TAG);
                 if (!clickableTag || clickableTag.classList.contains(PF2E_CLASSES.FILTERED_TRAIT)) return;
@@ -85,7 +83,7 @@ export class TraitFilter {
                 event.preventDefault();
                 event.stopPropagation();
                 container.classList.toggle(PF2E_CLASSES.EXPANDED_TRAITS);
-            }, { signal, capture: true });
+            }, { capture: true });
         });
     }
 }
@@ -103,17 +101,15 @@ export class HideDamageButtons {
         const canToggle = isCurrentUserAuthor(message) || !!game.user?.isGM;
         this._setButtonsHidden(damageButtons, true);
 
-        const signal = registerCleanup(messageElement);
-
         damageButtons.forEach(button => {
             button.addEventListener("click", () => {
                 this._setButtonsHidden(damageButtons, true);
                 const toggleIcon = messageElement.querySelector(PF2E_SELECTORS.TOGGLE_DAMAGE_BUTTONS);
                 if (toggleIcon) this._setToggleIcon(toggleIcon, true);
-            }, { signal });
+            });
         });
 
-        if (canToggle && messageMetadata) this._addVisibilityToggle(messageMetadata, damageButtons, signal);
+        if (canToggle && messageMetadata) this._addVisibilityToggle(messageMetadata, damageButtons);
     }
 
     static _setButtonsHidden(damageButtons, shouldHide) {
@@ -130,7 +126,7 @@ export class HideDamageButtons {
             : game.i18n.localize(PF2E_I18N.HIDE_DAMAGE_BUTTONS);
     }
 
-    static _addVisibilityToggle(messageMetadata, damageButtons, signal) {
+    static _addVisibilityToggle(messageMetadata, damageButtons) {
         if (messageMetadata.querySelector(PF2E_SELECTORS.TOGGLE_DAMAGE_BUTTONS)) return;
 
         const documentRef = getDocument(messageMetadata);
@@ -151,7 +147,7 @@ export class HideDamageButtons {
             const areButtonsHidden = damageButtons[0]?.classList.contains(PF2E_CLASSES.HIDDEN_DAMAGE_BUTTONS);
             this._setButtonsHidden(damageButtons, !areButtonsHidden);
             updateIcon();
-        }, { signal });
+        });
 
         const deleteButton = messageMetadata.querySelector(PF2E_SELECTORS.MESSAGE_DELETE);
         if (deleteButton) {
