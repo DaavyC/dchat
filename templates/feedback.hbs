@@ -1,0 +1,30 @@
+<div class="form-group stacked">
+    <span id="daavy-chat-feedback-category-label">{{localize "daavy-chat.Feedback.Category"}}</span>
+    <div class="form-fields daavy-chat-feedback-categories" role="radiogroup" aria-labelledby="daavy-chat-feedback-category-label">
+        <label class="daavy-chat-feedback-category">
+            <input type="radio" name="category" value="Bug" required>
+            <span>{{localize "daavy-chat.Feedback.Categories.Bug"}}</span>
+        </label>
+        <label class="daavy-chat-feedback-category">
+            <input type="radio" name="category" value="Suggestion" required>
+            <span>{{localize "daavy-chat.Feedback.Categories.Suggestion"}}</span>
+        </label>
+    </div>
+</div>
+
+<div class="form-group stacked">
+    <label for="daavy-chat-feedback-message">{{localize "daavy-chat.Feedback.Message"}}</label>
+    <textarea id="daavy-chat-feedback-message" name="message" rows="8" maxlength="3000" required></textarea>
+    <p class="hint">{{localize "daavy-chat.Feedback.MessageHint"}}</p>
+</div>
+
+<footer class="form-footer">
+    <button type="button" class="daavy-chat-feedback-cancel" data-action="close">
+        <i class="fa-solid fa-xmark"></i>
+        {{localize "daavy-chat.Feedback.Cancel"}}
+    </button>
+    <button type="submit" class="daavy-chat-feedback-send">
+        <i class="fa-solid fa-paper-plane"></i>
+        {{localize "daavy-chat.Feedback.Send"}}
+    </button>
+</footer>

@@ -19,6 +19,7 @@ import { CollapsibleFormula } from "./features/cleaner-chat.js";
 import { HidePrivateMessages } from "./features/hide-private-messages.js";
 import { ChatPins, setPinRefreshHandler } from "./features/pins.js";
 import { HideDamageButtons, TraitFilter } from "./features/pf2e-only.js";
+import { registerFeedbackMenu } from "./feedback.js";
 import { registerDaavyChatHooks } from "./hooks.js";
 
 export { ChatPins } from "./features/pins.js";
@@ -365,6 +366,7 @@ const messageFeatures = [
 
 export function initializeFeatures() {
     registerModuleSettings();
+    registerFeedbackMenu();
     setPinRefreshHandler(scheduleChatUiRefresh);
     AutocompleteWhisper.init();
 }

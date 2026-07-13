@@ -1,5 +1,6 @@
-##### 1.6.1 — WIP
-- Removed debug
+##### 1.6.1
+- Removed debug mode
+- Added an anonymous feedback button for GMs only
 
 ##### 1.6.0
 - Added Chat Pins
