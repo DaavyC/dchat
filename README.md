@@ -17,7 +17,6 @@ A simple module for **Foundry VTT** that organizes the chat log into tabs and ad
 - **🎲 Cleaner Messages** — Hides clutter from messages, rolls, and initiative.
 - **🔒 Private Rolls** — Hides private rolls from unauthorized users.
 - **⚔️ PF2e Tools** — Hides traits, damage-roll details, and damage buttons.
-- **💡 Feedback** — Lets GMs send anonymous module feedback.
 
 ---
 
@@ -32,7 +31,6 @@ A simple module for **Foundry VTT** that organizes the chat log into tabs and ad
 - **Hide Chat Formatting** — Hides formatting controls.
 - **Hide Chat Initiative** — Hides initiative messages.
 - **Hide Private Messages** — Hides unauthorized private rolls.
-- **Send Feedback** — Opens the anonymous feedback form for GMs.
 
 ### PF2e Only
 
