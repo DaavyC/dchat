@@ -74,7 +74,5 @@ export function registerDaavyChatHooks() {
     Hooks.on("updateChatMessage", scheduleChatUiRefresh);
     Hooks.on("preDeleteChatMessage", ChatPins.preDeleteMessage);
 
-    Hooks.on("preCreateChatMessage", (message, creationData) => {
-        return HideChatInitiative.preCreateChatMessage(message, creationData);
-    });
+    Hooks.on("preCreateChatMessage", HideChatInitiative.preCreateChatMessage);
 }

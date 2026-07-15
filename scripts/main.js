@@ -5,7 +5,7 @@ import {
     CHAT_TAB_CONFIG,
     FEATURE_CLASSES,
     MESSAGE_TYPES,
-    SETTING_KEYS
+    SETTINGS
 } from "./config.js";
 import { isSettingEnabled, registerModuleSettings } from "./settings.js";
 import {
@@ -30,18 +30,6 @@ export class ChatClearControls {
 
     static observeChatLog(renderedHtml) {
         this._observeChatLog(getElement(renderedHtml));
-    }
-
-    static refresh(element = null) {
-        const container = getElement(element);
-        if (container) {
-            this.injectClearButton(container);
-            return;
-        }
-
-        ChatTabsManager._getTrackedContainers().forEach(trackedContainer => {
-            this.injectClearButton(trackedContainer);
-        });
     }
 
     static _observeChatLog(element) {
@@ -96,7 +84,9 @@ export class ChatClearControls {
         scopedButtons.forEach(button => button.remove());
 
         const clearButton = scopedButton ?? this._createScopedClearButton(documentRef);
-        this._getFoundryClearButton(element)?.remove();
+        element.querySelector(CHAT_SELECTORS.CONTROLS)
+            ?.querySelector(CHAT_SELECTORS.FOUNDRY_CLEAR_BUTTON)
+            ?.remove();
 
         ChatPins.injectManagerButton(toolbar, documentRef);
         if (!toolbar.contains(clearButton)) {
@@ -120,11 +110,6 @@ export class ChatClearControls {
         await this._deleteInBatches(messageIds);
 
         ui.notifications.info(game.i18n.format(i18nKey("Clear.Success"), { label: tabLabel, count: messageIds.length }));
-    }
-
-    static _getFoundryClearButton(element) {
-        const controls = element.querySelector(CHAT_SELECTORS.CONTROLS);
-        return controls?.querySelector(CHAT_SELECTORS.FOUNDRY_CLEAR_BUTTON) ?? null;
     }
 
     static _getClearLabel(clearAll) {
@@ -163,14 +148,6 @@ export class ChatTabsManager {
     static _chatContainers = new Set();
     static activeTab = MESSAGE_TYPES.CHAT;
     static unreadTabs = new Set();
-
-    static getLocalizedLabels() {
-        return CHAT_TAB_CONFIG.map(tab => ({
-            id: tab.id,
-            icon: tab.icon,
-            label: game.i18n.localize(tab.label)
-        }));
-    }
 
     static _pruneContainers() {
         for (const element of Array.from(this._chatContainers)) {
@@ -234,7 +211,7 @@ export class ChatTabsManager {
         ChatPins.refresh(element);
         this._bindTabBar(element);
 
-        ChatClearControls.refresh(element);
+        ChatClearControls.injectClearButton(element);
     }
 
     static switch(tabId) {
@@ -296,18 +273,19 @@ export class ChatTabsManager {
     static _buildTabBar(documentRef) {
         const tabBar = documentRef.createElement("div");
         tabBar.className = CHAT_CLASSES.TAB_BAR;
-        tabBar.append(...this.getLocalizedLabels().map(tabConfig => this._buildTabButton(documentRef, tabConfig)));
+        tabBar.append(...CHAT_TAB_CONFIG.map(tabConfig => this._buildTabButton(documentRef, tabConfig)));
         return tabBar;
     }
 
     static _buildTabButton(documentRef, tabConfig) {
         const isActive = tabConfig.id === this.activeTab;
+        const label = game.i18n.localize(tabConfig.label);
         const button = documentRef.createElement("button");
         button.type = "button";
         button.className = `ui-control icon fas ${tabConfig.icon} ${CHAT_CLASSES.TAB_BUTTON}${isActive ? ` ${CHAT_CLASSES.ACTIVE}` : ""}`;
         button.dataset[CHAT_DATA.TAB] = tabConfig.id;
-        button.dataset.tooltip = tabConfig.label;
-        button.setAttribute("aria-label", tabConfig.label);
+        button.dataset.tooltip = label;
+        button.setAttribute("aria-label", label);
         button.setAttribute("aria-pressed", String(isActive));
 
         if (this.unreadTabs.has(tabConfig.id)) this._ensurePip(button);
@@ -354,13 +332,13 @@ export class ChatTabsManager {
 }
 
 const messageFeatures = [
-    { setting: SETTING_KEYS.CLEANER_CHAT, css: FEATURE_CLASSES.CLEANER_CHAT },
-    { setting: SETTING_KEYS.HIDE_DAMAGE_TRAITS, css: FEATURE_CLASSES.HIDE_DAMAGE_TRAITS },
-    { handler: TraitFilter, setting: SETTING_KEYS.TRAIT_FILTER, css: FEATURE_CLASSES.TRAIT_FILTER },
-    { handler: CollapsibleFormula, setting: SETTING_KEYS.COLLAPSIBLE_FORMULA, css: FEATURE_CLASSES.COLLAPSIBLE_FORMULA },
-    { setting: SETTING_KEYS.COMPACT_CHAT, css: FEATURE_CLASSES.COMPACT_CHAT },
-    { handler: HidePrivateMessages, setting: SETTING_KEYS.HIDE_PRIVATE_MESSAGES },
-    { handler: HideDamageButtons, setting: SETTING_KEYS.HIDE_DAMAGE_BUTTONS }
+    { setting: SETTINGS.CLEANER_CHAT.key, css: FEATURE_CLASSES.CLEANER_CHAT },
+    { setting: SETTINGS.HIDE_DAMAGE_TRAITS.key, css: FEATURE_CLASSES.HIDE_DAMAGE_TRAITS },
+    { handler: TraitFilter, setting: SETTINGS.TRAIT_FILTER.key, css: FEATURE_CLASSES.TRAIT_FILTER },
+    { handler: CollapsibleFormula, setting: SETTINGS.COLLAPSIBLE_FORMULA.key, css: FEATURE_CLASSES.COLLAPSIBLE_FORMULA },
+    { setting: SETTINGS.COMPACT_CHAT.key, css: FEATURE_CLASSES.COMPACT_CHAT },
+    { handler: HidePrivateMessages, setting: SETTINGS.HIDE_PRIVATE_MESSAGES.key },
+    { handler: HideDamageButtons, setting: SETTINGS.HIDE_DAMAGE_BUTTONS.key }
 ];
 
 export function initializeFeatures() {
@@ -393,7 +371,7 @@ export function scheduleChatUiRefresh() {
 }
 
 export function addChatNotification(message) {
-    if (isSettingEnabled(SETTING_KEYS.HIDE_PRIVATE_MESSAGES) && HidePrivateMessages.shouldHideMessage(message)) return;
+    if (isSettingEnabled(SETTINGS.HIDE_PRIVATE_MESSAGES.key) && HidePrivateMessages.shouldHideMessage(message)) return;
     ChatTabsManager.addNotification(classifyMessage(message));
 }
 

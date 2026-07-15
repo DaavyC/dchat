@@ -1,4 +1,4 @@
-import { SETTING_KEYS } from "../config.js";
+import { SETTINGS } from "../config.js";
 import { createAbortController, getDocument, getElement } from "../utils.js";
 import { isSettingEnabled } from "../settings.js";
 
@@ -12,7 +12,6 @@ const AUTOCOMPLETE_WHISPER = {
     PREFIX_PATTERN: /^(\/w|\/whisper)\s+/i,
     HOST_CLASS: "daavy-chat-whisper-autocomplete-host",
     POPUP_CLASS: "daavy-chat-whisper-autocomplete",
-    VISIBLE_CLASS: "visible",
     POPUP_ID_PREFIX: "daavy-chat-whisper",
     OPTION_CLASS: "daavy-chat-whisper-option",
     ACTIVE_OPTION_CLASS: "active",
@@ -36,19 +35,8 @@ export class AutocompleteWhisper {
     static _boundFocusDocuments = new WeakSet();
 
     static init() {
-        this._bindGlobalFocusListener();
-        this._scheduleRefresh();
-    }
-
-    static _scheduleRefresh() {
-        requestAnimationFrame(() => {
-            this._bindGlobalFocusListener();
-            this.refresh();
-        });
-    }
-
-    static _bindGlobalFocusListener() {
         this._bindFocusListener(globalThis.document);
+        requestAnimationFrame(() => this.refresh());
     }
 
     static _bindFocusListener(documentRef) {
@@ -77,28 +65,15 @@ export class AutocompleteWhisper {
     static refresh(element = null, elements = null) {
         this._pruneHosts();
 
-        let attached = false;
-        if (elements) attached = this._attachFromElements(elements) || attached;
+        for (const candidate of Object.values(elements ?? {})) this._attach(candidate);
 
         const rootElement = getElement(element);
-        if (rootElement) attached = this._attach(rootElement) || attached;
+        if (rootElement) this._attach(rootElement);
 
         const currentHost = globalThis.document?.querySelector?.(AUTOCOMPLETE_WHISPER.HOST_SELECTOR);
-        if (currentHost) attached = this._attach(currentHost) || attached;
+        if (currentHost) this._attach(currentHost);
 
-        for (const host of Array.from(this._trackedHosts)) {
-            attached = this._attach(host) || attached;
-        }
-
-        return attached;
-    }
-
-    static _attachFromElements(elements) {
-        let attached = false;
-        for (const element of Object.values(elements ?? {})) {
-            attached = this._attach(element) || attached;
-        }
-        return attached;
+        for (const host of this._trackedHosts) this._attach(host);
     }
 
     static _attach(rootElement) {
@@ -108,7 +83,7 @@ export class AutocompleteWhisper {
         this._trackedHosts.add(host);
         this._bindFocusListener(getDocument(host));
 
-        if (!isSettingEnabled(SETTING_KEYS.AUTOCOMPLETE_WHISPER)) {
+        if (!isSettingEnabled(SETTINGS.AUTOCOMPLETE_WHISPER.key)) {
             this._teardown(host);
             return false;
         }
@@ -146,17 +121,13 @@ export class AutocompleteWhisper {
         this._states.set(host, state);
         host.classList.add(AUTOCOMPLETE_WHISPER.HOST_CLASS);
         prepareEditable(editable, state.popup.id);
-        this._bindStateEvents(state);
-
-        this._updateSuggestions(host);
-        return true;
-    }
-
-    static _bindStateEvents(state) {
         const refresh = () => this._updateSuggestions(state.host);
         this._bindEditableEvents(state, refresh);
         this._bindEditorEvents(state, refresh);
         this._bindPopupEvents(state);
+
+        this._updateSuggestions(host);
+        return true;
     }
 
     static _bindEditableEvents(state, refresh) {
@@ -374,7 +345,7 @@ function getEditorText(editable) {
         .replace(/\u200b/g, "");
 }
 
-function getSelectionOffsets(editable) {
+function getCaretOffset(editable) {
     const documentRef = getDocument(editable);
     const selection = documentRef.getSelection?.();
     if (!selection?.rangeCount) return null;
@@ -382,16 +353,12 @@ function getSelectionOffsets(editable) {
     const range = selection.getRangeAt(0);
     if (!editable.contains(range.startContainer) || !editable.contains(range.endContainer)) return null;
 
-    return {
-        start: getRangeOffset(editable, range.startContainer, range.startOffset),
-        end: getRangeOffset(editable, range.endContainer, range.endOffset)
-    };
+    return getRangeOffset(editable, range.startContainer, range.startOffset);
 }
 
 export function getMatchState(editable) {
     const editorText = getEditorText(editable);
-    const selection = getSelectionOffsets(editable);
-    const caret = selection?.start ?? editorText.length;
+    const caret = getCaretOffset(editable) ?? editorText.length;
     const prefix = editorText.match(AUTOCOMPLETE_WHISPER.PREFIX_PATTERN);
     if (!prefix) return null;
 
@@ -497,13 +464,11 @@ function renderPopup(state) {
     const options = state.suggestions.map((suggestion, index) => createSuggestionOption(documentRef, state, suggestion, index));
     state.popup.replaceChildren(...options);
     state.popup.hidden = false;
-    state.popup.classList.add(AUTOCOMPLETE_WHISPER.VISIBLE_CLASS);
     updateActiveDescendant(state);
 }
 
 function hidePopup(state) {
     state.popup.hidden = true;
-    state.popup.classList.remove(AUTOCOMPLETE_WHISPER.VISIBLE_CLASS);
     state.popup.replaceChildren();
     state.editable.setAttribute("aria-expanded", "false");
     state.editable.removeAttribute("aria-activedescendant");
@@ -566,7 +531,6 @@ export function getSuggestions(match, users, maxResults) {
         })
         .slice(0, maxResults)
         .map(user => ({
-            id: user.id,
             name: user.name.trim(),
             active: !!user.active
         }));

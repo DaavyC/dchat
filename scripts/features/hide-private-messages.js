@@ -1,4 +1,4 @@
-import { SETTING_KEYS } from "../config.js";
+import { SETTINGS } from "../config.js";
 import { getElement, isCurrentUserAuthor } from "../utils.js";
 import { isSettingEnabled } from "../settings.js";
 
@@ -17,7 +17,7 @@ export class HidePrivateMessages {
         if (typeof originalNotify !== "function") return;
 
         ChatLogClass.prototype.notify = function (message, options) {
-            if (isSettingEnabled(SETTING_KEYS.HIDE_PRIVATE_MESSAGES) && HidePrivateMessages.shouldHideMessage(message)) return;
+            if (isSettingEnabled(SETTINGS.HIDE_PRIVATE_MESSAGES.key) && HidePrivateMessages.shouldHideMessage(message)) return;
             return originalNotify.call(this, message, options);
         };
 

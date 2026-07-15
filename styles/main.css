@@ -156,7 +156,6 @@ button.daavy-chat-feedback-action:hover {
     margin-top: 6px;
 }
 
-button.daavy-chat-pin-accept,
 .daavy-chat-pin-accept,
 dialog:has(.daavy-chat-pin-manager-content) .form-footer button[data-action="close"] {
     color: #f4fff5;
@@ -169,7 +168,6 @@ dialog:has(.daavy-chat-pin-manager-content) .form-footer button[data-action="clo
     background: #2f8846;
 }
 
-button.daavy-chat-pin-deny,
 .daavy-chat-pin-deny,
 .daavy-chat-pin-manager-unpin-all,
 .daavy-chat-pin-manager-item button {

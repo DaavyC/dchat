@@ -1,4 +1,4 @@
-import { SETTING_KEYS } from "../config.js";
+import { SETTINGS } from "../config.js";
 import { isSettingEnabled } from "../settings.js";
 import { getElement } from "../utils.js";
 
@@ -29,7 +29,7 @@ export class HideChatFormatting {
     }
 
     static refresh(...renderedRoots) {
-        const shouldHideFormatting = isSettingEnabled(SETTING_KEYS.HIDE_CHAT_FORMATTING);
+        const shouldHideFormatting = isSettingEnabled(SETTINGS.HIDE_CHAT_FORMATTING.key);
 
         renderedRoots
             .flatMap(getRenderedElements)

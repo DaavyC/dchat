@@ -62,10 +62,6 @@ export const SETTINGS = {
     }
 };
 
-export const SETTING_KEYS = Object.freeze(Object.fromEntries(
-    Object.entries(SETTINGS).map(([id, setting]) => [id, setting.key])
-));
-
 export const SETTING_GROUPS = Object.freeze({
     Settings: [
         SETTINGS.AUTOCOMPLETE_WHISPER.key,

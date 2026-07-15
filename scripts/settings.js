@@ -27,7 +27,7 @@ export class SettingsLayout {
     static _groupSettingRows(container, documentRef, groupKey, settingKeys) {
         const rows = settingKeys
             .map(key => this._findSettingRow(container, key))
-            .filter(row => this._isUngroupedSettingRow(row));
+            .filter(row => row && !row.closest(`.${SETTINGS_CLASSES.GROUP}`));
         if (!rows.length) return;
 
         const group = this._createGroup(documentRef, groupKey);
@@ -62,25 +62,18 @@ export class SettingsLayout {
             ?? null;
     }
 
-    static _isUngroupedSettingRow(row) {
-        return row && !row.closest(`.${SETTINGS_CLASSES.GROUP}`);
-    }
 }
 
 export function registerModuleSettings() {
-    for (const setting of Object.values(SETTINGS)) {
-        registerBooleanSetting(setting);
+    for (const { key, ...options } of Object.values(SETTINGS)) {
+        game.settings.register(MODULE_ID, key, {
+            scope: "client",
+            config: true,
+            default: options.default ?? false,
+            type: Boolean,
+            ...options
+        });
     }
-}
-
-function registerBooleanSetting({ key, ...options }) {
-    game.settings.register(MODULE_ID, key, {
-        scope: "client",
-        config: true,
-        default: options.default ?? false,
-        type: Boolean,
-        ...options
-    });
 }
 
 export function isSettingEnabled(key) {
