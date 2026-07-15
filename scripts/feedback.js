@@ -1,10 +1,14 @@
 import { MODULE_ID } from "./config.js";
+import { getDocument, getElement } from "./utils.js";
 
 const FEEDBACK_ENDPOINT = "https://feedback.daavyc.workers.dev";
 const FEEDBACK_TEMPLATE = `modules/${MODULE_ID}/templates/feedback.hbs`;
+const DONATE_URL = "https://ko-fi.com/daavy";
+const DISCORD_URL = "https://discord.gg/ZmFZxdGrta";
 const MAX_MESSAGE_LENGTH = 3000;
 const I18N_PREFIX = "daavy-chat.Feedback";
 const CATEGORIES = ["Bug", "Suggestion"];
+const FEEDBACK_ACTIONS_CLASS = "daavy-chat-settings-actions";
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 
@@ -88,13 +92,37 @@ export class FeedbackForm extends HandlebarsApplicationMixin(ApplicationV2) {
     }
 }
 
-export function registerFeedbackMenu() {
-    game.settings.registerMenu(MODULE_ID, "feedback", {
-        name: `${I18N_PREFIX}.MenuName`,
-        label: `${I18N_PREFIX}.MenuLabel`,
-        hint: `${I18N_PREFIX}.MenuHint`,
-        icon: "fa-solid fa-comment-dots",
-        type: FeedbackForm,
-        restricted: true,
-    });
+export function injectFeedbackButton(renderedHtml) {
+    const container = getElement(renderedHtml);
+    if (!container || !game.user?.isGM || container.querySelector(`.${FEEDBACK_ACTIONS_CLASS}`)) return;
+
+    const groups = container.querySelectorAll(".daavy-chat-settings-group");
+    const firstGroup = groups[0];
+    if (!firstGroup) return;
+
+    const documentRef = getDocument(container);
+    const actions = documentRef.createElement("div");
+    actions.className = FEEDBACK_ACTIONS_CLASS;
+
+    const donateButton = documentRef.createElement("button");
+    donateButton.type = "button";
+    donateButton.className = "daavy-chat-donate-action";
+    donateButton.innerHTML = `<i class="fa-solid fa-heart"></i> ${game.i18n.localize("daavy-chat.Donate.Label")}`;
+    donateButton.addEventListener("click", () => documentRef.defaultView.open(DONATE_URL, "_blank", "noopener,noreferrer"));
+
+    const discordButton = documentRef.createElement("button");
+    discordButton.type = "button";
+    discordButton.className = "daavy-chat-discord-action";
+    discordButton.innerHTML = `<i class="fa-brands fa-discord"></i> ${game.i18n.localize("daavy-chat.Discord.Label")}`;
+    discordButton.addEventListener("click", () => documentRef.defaultView.open(DISCORD_URL, "_blank", "noopener,noreferrer"));
+
+    const feedbackButton = documentRef.createElement("button");
+    feedbackButton.type = "button";
+    feedbackButton.className = "daavy-chat-feedback-action";
+    feedbackButton.title = game.i18n.localize(`${I18N_PREFIX}.MenuHint`);
+    feedbackButton.innerHTML = `<i class="fa-solid fa-comment-dots"></i> ${game.i18n.localize(`${I18N_PREFIX}.MenuLabel`)}`;
+    feedbackButton.addEventListener("click", () => new FeedbackForm().render({ force: true }));
+
+    actions.append(donateButton, discordButton, feedbackButton);
+    firstGroup.before(actions);
 }

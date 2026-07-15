@@ -1,3 +1,6 @@
+##### 1.6.2
+- Improved the Settings interface
+
 ##### 1.6.1
 - Removed debug mode
 - Added an anonymous feedback button for GMs only

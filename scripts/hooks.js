@@ -1,4 +1,5 @@
 import { MESSAGE_TYPES } from "./config.js";
+import { injectFeedbackButton } from "./feedback.js";
 import { SettingsLayout } from "./settings.js";
 import { getChatSection, getElement } from "./utils.js";
 import { AutocompleteWhisper } from "./features/autocomplete-whisper.js";
@@ -28,6 +29,7 @@ export function registerDaavyChatHooks() {
 
     Hooks.on("renderSettingsConfig", (_application, renderedHtml) => {
         SettingsLayout.groupSettings(renderedHtml);
+        injectFeedbackButton(renderedHtml);
     });
 
     Hooks.on("renderChatInput", (application, elements) => {

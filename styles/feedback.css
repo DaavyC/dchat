@@ -18,6 +18,21 @@ button.daavy-chat-feedback-send {
     background: #9b3030;
 }
 
+button.daavy-chat-feedback-send:focus,
+button.daavy-chat-feedback-send:active,
+button.daavy-chat-feedback-cancel:focus,
+button.daavy-chat-feedback-cancel:active {
+    outline: none;
+    box-shadow: none;
+}
+
+button.daavy-chat-feedback-send:focus-visible,
+button.daavy-chat-feedback-cancel:focus-visible {
+    outline: 2px solid #4a90e2;
+    outline-offset: 2px;
+    box-shadow: none;
+}
+
 .daavy-chat-feedback-categories {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));

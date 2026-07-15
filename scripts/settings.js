@@ -30,26 +30,29 @@ export class SettingsLayout {
             .filter(row => this._isUngroupedSettingRow(row));
         if (!rows.length) return;
 
-        const fieldset = this._createGroupFieldset(documentRef, groupKey);
-        rows[0].replaceWith(fieldset);
+        const group = this._createGroup(documentRef, groupKey);
+        rows[0].replaceWith(group);
 
         for (const row of rows) {
             row.remove();
             row.classList.add(SETTINGS_CLASSES.ROW);
-            fieldset.appendChild(row);
+            group.appendChild(row);
         }
     }
 
-    static _createGroupFieldset(documentRef, groupKey) {
-        const fieldset = documentRef.createElement("fieldset");
-        fieldset.className = SETTINGS_CLASSES.GROUP;
+    static _createGroup(documentRef, groupKey) {
+        const group = documentRef.createElement("div");
+        group.className = SETTINGS_CLASSES.GROUP;
+        group.setAttribute("role", "group");
 
-        const legend = documentRef.createElement("legend");
-        legend.textContent = game.i18n.localize(`${SETTINGS_GROUP_PREFIX}.${groupKey}`);
-        legend.className = SETTINGS_CLASSES.GROUP_TITLE;
-        fieldset.appendChild(legend);
+        const title = documentRef.createElement("h3");
+        title.id = `${MODULE_ID}-settings-group-${groupKey}`;
+        title.textContent = game.i18n.localize(`${SETTINGS_GROUP_PREFIX}.${groupKey}`);
+        title.className = SETTINGS_CLASSES.GROUP_TITLE;
+        group.setAttribute("aria-labelledby", title.id);
+        group.appendChild(title);
 
-        return fieldset;
+        return group;
     }
 
     static _findSettingRow(container, key) {
