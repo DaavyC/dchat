@@ -1,4 +1,4 @@
-import { PF2E_TRAITS_TO_HIDE } from "../config.js";
+import { PF2E_TRAITS_TO_HIDE } from "../constants.js";
 import { getDocument, getElement, isCurrentUserAuthor } from "../utils.js";
 
 const PF2E_SELECTORS = {

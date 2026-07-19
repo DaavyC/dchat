@@ -90,7 +90,7 @@ export const FEATURE_CLASSES = {
 export const CHAT_TAB_CONFIG = [
     { id: MESSAGE_TYPES.CHAT, label: "daavy-chat.Tabs.Chat", icon: "fa-comments" },
     { id: MESSAGE_TYPES.GAME, label: "daavy-chat.Tabs.Game", icon: "fa-dice-d20" },
-    { id: MESSAGE_TYPES.WHISPER, label: "daavy-chat.Tabs.Whispers", icon: "fa-lock" },
+    { id: MESSAGE_TYPES.WHISPER, label: "daavy-chat.Tabs.Whispers", icon: "fa-user-secret" },
 ];
 
 export const CHAT_SELECTORS = {
@@ -108,7 +108,8 @@ export const CHAT_SELECTORS = {
     PIN_TOGGLE: ".daavy-chat-pin-toggle",
     PIN_MANAGER: ".daavy-chat-pin-manager",
     SCOPED_CLEAR: ".daavy-chat-scoped-clear",
-    PIP: ".daavy-chat-pip"
+    PIP: ".daavy-chat-pip",
+    WHISPER_TARGET: ".daavy-chat-whisper-target"
 };
 
 export const CHAT_CLASSES = {
@@ -121,6 +122,7 @@ export const CHAT_CLASSES = {
     PIN_TOGGLE: "daavy-chat-pin-toggle",
     PIN_MANAGER: "ui-control icon fas fa-thumbtack daavy-chat-pin-manager",
     SCOPED_CLEAR: "ui-control icon fas fa-trash daavy-chat-scoped-clear",
+    WHISPER_TARGET: "daavy-chat-whisper-target",
     FILTER_PREFIX: "daavy-chat-filter"
 };
 

@@ -1,3 +1,12 @@
+##### 1.6.3
+- Changed the Whisper tab icon to a more intuitive one
+- You will now hear a sound notification when receiving Whisper messages
+- Sending a message while the Whisper tab is open will reply to the last user who sent you a Whisper
+- Certain chat actions automatically switch tabs (e.g. sending a message switches to the Chat tab, making a roll switches to the Game tab, and sending a whisper switches to the Whispers tab)
+- Your current whisper reply target is shown next to the Whispers tab
+- Sending /w user without any text changes your current whisper reply target without creating a message
+- Improved Autocomplete Whisper behavior when holding Shift
+
 ##### 1.6.2
 - Improved the Settings interface
 

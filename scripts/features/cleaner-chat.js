@@ -1,4 +1,4 @@
-import { SETTINGS } from "../config.js";
+import { SETTINGS } from "../constants.js";
 import { isSettingEnabled } from "../settings.js";
 import { getElement } from "../utils.js";
 

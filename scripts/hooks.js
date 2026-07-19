@@ -1,7 +1,7 @@
-import { MESSAGE_TYPES } from "./config.js";
+import { MESSAGE_TYPES } from "./constants.js";
 import { injectFeedbackButton } from "./feedback.js";
 import { SettingsLayout } from "./settings.js";
-import { getChatSection, getElement } from "./utils.js";
+import { classifyMessage, getChatSection, getElement, isCurrentUserAuthor } from "./utils.js";
 import { AutocompleteWhisper } from "./features/autocomplete-whisper.js";
 import { HideChatFormatting } from "./features/cleaner-chat.js";
 import { HideChatInitiative } from "./features/hide-chat-initiative.js";
@@ -25,6 +25,7 @@ export function registerDaavyChatHooks() {
     Hooks.once("ready", () => {
         ChatPins.onReady();
         HidePrivateMessages.onReady();
+        ChatTabsManager.initializeWhisperTarget();
     });
 
     Hooks.on("renderSettingsConfig", (_application, renderedHtml) => {
@@ -70,9 +71,16 @@ export function registerDaavyChatHooks() {
     Hooks.on("closeDetachedWindow", refreshDetachedChat);
 
     Hooks.on("renderChatMessageHTML", processFeatures);
-    Hooks.on("createChatMessage", addChatNotification);
+    Hooks.on("createChatMessage", (message) => {
+        addChatNotification(message);
+        ChatTabsManager.onCreateWhisperMessage(message);
+        if (isCurrentUserAuthor(message)) ChatTabsManager.switch(classifyMessage(message));
+    });
     Hooks.on("updateChatMessage", scheduleChatUiRefresh);
     Hooks.on("preDeleteChatMessage", ChatPins.preDeleteMessage);
+    Hooks.on("chatInput", ChatTabsManager.onWhisperChatInput.bind(ChatTabsManager));
+    Hooks.on("chatMessage", ChatTabsManager.onWhisperChatMessage.bind(ChatTabsManager));
 
     Hooks.on("preCreateChatMessage", HideChatInitiative.preCreateChatMessage);
+    Hooks.on("preCreateChatMessage", ChatTabsManager.preCreateWhisperMessage.bind(ChatTabsManager));
 }

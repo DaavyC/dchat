@@ -41,6 +41,8 @@
   "daavy-chat.Tabs.Chat": "Chat",
   "daavy-chat.Tabs.Game": "Game",
   "daavy-chat.Tabs.Whispers": "Whispers",
+  "daavy-chat.Whisper.To": "To:",
+  "daavy-chat.Whisper.NoRecipient": "No received whisper is available to reply to.",
   "daavy-chat.Tabs.All": "All Tabs",
   "daavy-chat.Clear.NoMessages": "{label}: No messages to clear.",
   "daavy-chat.Clear.Title": "Clear {label}",

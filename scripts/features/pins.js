@@ -4,7 +4,7 @@ import {
     CHAT_TAB_CONFIG,
     MESSAGE_TYPES,
     MODULE_ID
-} from "../config.js";
+} from "../constants.js";
 import {
     classifyMessage,
     getDocument,

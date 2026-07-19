@@ -93,6 +93,20 @@ button.daavy-chat-feedback-action:hover {
     margin-right: auto;
 }
 
+.daavy-chat-module-toolbar .daavy-chat-tab-bar:has(+ .daavy-chat-whisper-target) {
+    margin-right: 0;
+}
+
+.daavy-chat-whisper-target {
+    display: inline-flex;
+    align-items: center;
+    margin-right: auto;
+    font-family: var(--font-primary);
+    font-size: var(--font-size-12, 12px);
+    font-weight: normal;
+    white-space: nowrap;
+}
+
 .daavy-chat-scoped-clear {
     margin-left: 4px;
 }

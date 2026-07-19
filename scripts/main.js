@@ -5,8 +5,9 @@ import {
     CHAT_TAB_CONFIG,
     FEATURE_CLASSES,
     MESSAGE_TYPES,
+    MODULE_ID,
     SETTINGS
-} from "./config.js";
+} from "./constants.js";
 import { isSettingEnabled, registerModuleSettings } from "./settings.js";
 import {
     classifyMessage,
@@ -148,6 +149,7 @@ export class ChatTabsManager {
     static _chatContainers = new Set();
     static activeTab = MESSAGE_TYPES.CHAT;
     static unreadTabs = new Set();
+    static whisperTargetIds = [];
 
     static _pruneContainers() {
         for (const element of Array.from(this._chatContainers)) {
@@ -206,6 +208,7 @@ export class ChatTabsManager {
 
         toolbar.querySelectorAll(CHAT_SELECTORS.TAB_BAR).forEach(tabBar => tabBar.remove());
         toolbar.prepend(this._buildTabBar(getDocument(element)));
+        this._syncWhisperTarget(element);
         this._applyFilterClass(element, messageLog, this.activeTab);
         this.classifyExistingMessages(element);
         ChatPins.refresh(element);
@@ -228,6 +231,123 @@ export class ChatTabsManager {
             this._syncTabButtons(container, tabId);
             this._scrollToBottom(messageList);
         }
+    }
+
+    static setWhisperTarget(userIds = []) {
+        this.whisperTargetIds = Array.from(new Set(userIds)).filter(userId => game.users.has(userId));
+
+        for (const container of this._getTrackedContainers()) {
+            this._syncWhisperTarget(container);
+        }
+    }
+
+    static getWhisperTargetUsers() {
+        return this.whisperTargetIds.map(userId => game.users.get(userId)).filter(Boolean);
+    }
+
+    static initializeWhisperTarget() {
+        const message = game.messages?.contents.findLast(message => !message.isRoll
+            && message.whisper?.includes(game.user.id)
+            && message.author?.id !== game.user.id);
+        this.setWhisperTarget(message ? [message.author.id] : []);
+    }
+
+    static onWhisperChatInput(event, options) {
+        if (this.activeTab !== MESSAGE_TYPES.WHISPER
+            || event.key !== "Enter"
+            || event.shiftKey
+            || event.isComposing) return;
+
+        const text = event.target?.textContent?.trim() ?? "";
+        if (!text || text.startsWith("/")) return;
+
+        const recipients = this.getWhisperTargetUsers();
+        if (recipients.length && this._canWhisper(recipients)) return;
+
+        event.preventDefault();
+        options.recordPending = false;
+        this._notifyMissingWhisperRecipient(recipients);
+        return false;
+    }
+
+    static onWhisperChatMessage(chatLog, message, chatData) {
+        if (this.activeTab !== MESSAGE_TYPES.WHISPER) return;
+
+        const [command, match] = chatLog.constructor.parse(message);
+        if (command === "whisper" && this._isEmptyWhisperContent(match[3])) {
+            const recipients = this._resolveWhisperRecipients(match[2]);
+            if (!recipients.length || !this._canWhisper(recipients)) return;
+
+            this.setWhisperTarget(recipients.map(user => user.id));
+            return false;
+        }
+
+        if (command !== "none") return;
+
+        const recipients = this.getWhisperTargetUsers();
+        if (!recipients.length || !this._canWhisper(recipients)) {
+            this._notifyMissingWhisperRecipient(recipients);
+            return false;
+        }
+
+        const whisperData = {
+            ...chatData,
+            content: match[2].replace(/\n/g, "<br>"),
+            whisper: recipients.map(user => user.id),
+            sound: CONFIG.sounds.notification,
+        };
+        delete whisperData.speaker;
+
+        void ChatMessage.implementation.create(whisperData).catch(error => {
+            Hooks.onError(`${MODULE_ID} | ChatTabsManager.onWhisperChatMessage`, error, {
+                log: "error",
+                notify: "error",
+            });
+        });
+        return false;
+    }
+
+    static preCreateWhisperMessage(message) {
+        if (!message.whisper?.length) return;
+        if (!message.isRoll && this._isEmptyWhisperContent(message.content)) {
+            if (message.author?.id === game.user.id) {
+                this.setWhisperTarget(message.whisper.filter(userId => userId !== game.user.id));
+            }
+            return false;
+        }
+
+        if (!message.sound) message.updateSource({ sound: CONFIG.sounds.notification });
+    }
+
+    static onCreateWhisperMessage(message) {
+        if (message.isRoll || !message.whisper?.length) return;
+
+        if (message.author?.id !== game.user.id
+            && message.whisper.includes(game.user.id)
+            && message.author?.id) {
+            this.setWhisperTarget([message.author.id]);
+        }
+    }
+
+    static _resolveWhisperRecipients(target) {
+        const names = target.replace(/[[\]]/g, "").split(",").map(name => name.trim());
+        const recipients = names.flatMap(name => ChatMessage.getWhisperRecipients(name));
+        return Array.from(new Map(recipients.map(user => [user.id, user])).values());
+    }
+
+    static _isEmptyWhisperContent(content) {
+        const template = globalThis.document.createElement("template");
+        template.innerHTML = content ?? "";
+        return !(template.content.textContent ?? "").replace(/[\u00a0\u200b]/g, "").trim();
+    }
+
+    static _canWhisper(recipients) {
+        return recipients.every(user => user.isGM) || game.user.can("MESSAGE_WHISPER");
+    }
+
+    static _notifyMissingWhisperRecipient(recipients) {
+        const key = recipients.length ? "ERROR.CantWhisper" : "daavy-chat.Whisper.NoRecipient";
+        ui.notifications.warn(game.i18n.localize(key));
     }
 
     static addNotification(tabId) {
@@ -314,6 +434,44 @@ export class ChatTabsManager {
             button.setAttribute("aria-pressed", String(isActive));
             if (isActive) button.querySelector(CHAT_SELECTORS.PIP)?.remove();
         });
+        this._syncWhisperTarget(container);
+    }
+
+    static _syncWhisperTarget(container) {
+        const tabBar = container.querySelector(CHAT_SELECTORS.TAB_BAR);
+        const button = tabBar?.querySelector(`[data-daavy-chat-tab="${MESSAGE_TYPES.WHISPER}"]`);
+        container.querySelector(CHAT_SELECTORS.WHISPER_TARGET)?.remove();
+        if (!button) return;
+
+        const label = game.i18n.localize(CHAT_TAB_CONFIG.find(tab => tab.id === MESSAGE_TYPES.WHISPER).label);
+        button.dataset.tooltip = label;
+        button.setAttribute("aria-label", label);
+
+        if (!button.classList.contains(CHAT_CLASSES.ACTIVE)) return;
+
+        const users = this.getWhisperTargetUsers();
+        if (!users.length) return;
+
+        const documentRef = getDocument(button);
+        const target = documentRef.createElement("span");
+        const targetLabel = game.i18n.localize(i18nKey("Whisper.To"));
+        target.className = CHAT_CLASSES.WHISPER_TARGET;
+        target.setAttribute("aria-live", "polite");
+        target.append(`${targetLabel}\u00a0`);
+
+        users.forEach((user, index) => {
+            if (index) target.append(", ");
+
+            const name = documentRef.createElement("span");
+            name.style.color = user.color.css;
+            name.textContent = user.name;
+            target.append(name);
+        });
+
+        const description = `${targetLabel} ${users.map(user => user.name).join(", ")}`;
+        tabBar.after(target);
+        button.dataset.tooltip = `${label}. ${description}`;
+        button.setAttribute("aria-label", `${label}. ${description}`);
     }
 
     static _ensurePip(button) {

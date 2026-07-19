@@ -2,7 +2,7 @@ import {
     MODULE_ID,
     SETTINGS,
     SETTING_GROUPS
-} from "./config.js";
+} from "./constants.js";
 import { getDocument, getElement } from "./utils.js";
 
 const SETTINGS_CLASSES = {

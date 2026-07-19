@@ -1,4 +1,4 @@
-import { CHAT_SELECTORS, MESSAGE_TYPES, MODULE_ID } from "./config.js";
+import { CHAT_SELECTORS, MESSAGE_TYPES, MODULE_ID } from "./constants.js";
 
 export function classifyMessage(message = {}) {
     const flags = message.flags?.pf2e ?? {};

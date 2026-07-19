@@ -1,4 +1,4 @@
-import { MODULE_ID } from "./config.js";
+import { MODULE_ID } from "./constants.js";
 import { getDocument, getElement } from "./utils.js";
 
 const FEEDBACK_ENDPOINT = "https://feedback.daavyc.workers.dev";

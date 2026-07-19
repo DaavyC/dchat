@@ -1,4 +1,4 @@
-import { SETTINGS } from "../config.js";
+import { SETTINGS } from "../constants.js";
 import { createAbortController, getDocument, getElement } from "../utils.js";
 import { isSettingEnabled } from "../settings.js";
 
@@ -205,6 +205,10 @@ export class AutocompleteWhisper {
     static _onKeydown(host, event) {
         const state = this._states.get(host);
         if (!state || state.popup.hidden || !state.suggestions.length) return;
+        if (event.key === "Enter" && !event.shiftKey && state.match?.caretAfterTarget) {
+            hidePopup(state);
+            return;
+        }
 
         switch (event.key) {
             case "ArrowDown":
@@ -241,18 +245,16 @@ export class AutocompleteWhisper {
         const textAfterMatch = editorText.slice(match.targetEnd);
         const selectedNames = match.selectedNames.filter(name => name.toLocaleLowerCase() !== suggestion.name.toLocaleLowerCase());
         const recipients = [...selectedNames, suggestion.name];
-
-        if (persist) {
-            const replacement = `[${recipients.join(", ")}, ]`;
-            replaceEditorRange(state, match.targetStart, match.targetEnd, replacement, replacement.length - 1);
-            this._updateSuggestions(host);
-            return;
-        }
-
         const replacement = `[${recipients.join(", ")}]`;
-        const spacer = /^\s/.test(textAfterMatch) ? "" : " ";
-        replaceEditorRange(state, match.targetStart, match.targetEnd, `${replacement}${spacer}`);
-        hidePopup(state);
+        const hasSpacer = /^\s/.test(textAfterMatch);
+        replaceEditorRange(
+            state,
+            match.targetStart,
+            match.targetEnd,
+            `${replacement}${hasSpacer ? "" : " "}`,
+            replacement.length + 1,
+        );
+        persist ? this._updateSuggestions(host) : hidePopup(state);
     }
 }
 
@@ -394,12 +396,23 @@ function getPlainMatch(editorText, targetStart, remainder, caret) {
 function getBracketedMatch(editorText, targetStart, remainder, caret) {
     const closeIndex = remainder.indexOf("]");
     const targetEnd = closeIndex === -1 ? editorText.length : targetStart + closeIndex + 1;
-    if (caret > targetEnd) return null;
 
     const innerStart = targetStart + 1;
     const innerEnd = closeIndex === -1 ? targetEnd : targetEnd - 1;
     const inside = editorText.slice(innerStart, innerEnd);
     const segments = inside.split(",");
+    if (caret > targetEnd) {
+        if (editorText.slice(targetEnd, caret).trim() || editorText.slice(caret).trim()) return null;
+
+        return {
+            query: "",
+            targetStart,
+            targetEnd,
+            selectedNames: segments.map(segment => segment.trim()).filter(Boolean),
+            caretAfterTarget: true
+        };
+    }
+
     const caretInside = Math.max(0, Math.min(caret - innerStart, inside.length));
     const currentIndex = inside.slice(0, caretInside).split(",").length - 1;
     const currentSegment = segments[currentIndex];
