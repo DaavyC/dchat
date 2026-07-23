@@ -1,4 +1,8 @@
-import { CHAT_SELECTORS, MESSAGE_TYPES, MODULE_ID } from "./constants.js";
+import { MESSAGE_TYPES, MODULE_ID } from "./constants.js";
+
+export function i18nKey(key) {
+    return `daavy-chat.${key}`;
+}
 
 export function classifyMessage(message = {}) {
     const flags = message.flags?.pf2e ?? {};
@@ -44,16 +48,4 @@ export function getDocument(element = null) {
 
 export function isCurrentUserAuthor(message) {
     return message?.author?.id === game.user?.id;
-}
-
-export function getChatSection(renderedHtml) {
-    const element = getElement(renderedHtml);
-    if (!element) return null;
-    if (element.matches?.(CHAT_SELECTORS.SECTION)) return element;
-    return element.querySelector(CHAT_SELECTORS.SECTION);
-}
-
-export function createAbortController(element) {
-    const AbortControllerCtor = element?.ownerDocument?.defaultView?.AbortController ?? globalThis.AbortController;
-    return new AbortControllerCtor();
 }

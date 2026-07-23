@@ -1,33 +1,6 @@
-import { SETTINGS } from "../constants.js";
-import { createAbortController, getDocument, getElement } from "../utils.js";
+import { AUTOCOMPLETE_WHISPER, SETTINGS } from "../constants.js";
+import { getDocument, getElement } from "../utils.js";
 import { isSettingEnabled } from "../settings.js";
-
-const AUTOCOMPLETE_WHISPER = {
-    HOST_SELECTOR: "#chat-notifications, #chat-form, form.chat-form",
-    EDITOR_SELECTOR: "prose-mirror[name='message'], prose-mirror, .editor-content[contenteditable='true'], [contenteditable='true']",
-    MESSAGE_EDITOR_SELECTOR: "prose-mirror[name='message'], prose-mirror",
-    EDITABLE_SELECTOR: ".editor-content[contenteditable='true'], [contenteditable='true']",
-    MAX_RESULTS: 6,
-    CARET_NAVIGATION_KEYS: ["ArrowLeft", "ArrowRight", "Home", "End"],
-    PREFIX_PATTERN: /^(\/w|\/whisper)\s+/i,
-    HOST_CLASS: "daavy-chat-whisper-autocomplete-host",
-    POPUP_CLASS: "daavy-chat-whisper-autocomplete",
-    POPUP_ID_PREFIX: "daavy-chat-whisper",
-    OPTION_CLASS: "daavy-chat-whisper-option",
-    ACTIVE_OPTION_CLASS: "active",
-    STATUS_CLASS: "daavy-chat-whisper-status",
-    ACTIVE_STATUS_CLASS: "is-active",
-    NAME_CLASS: "daavy-chat-whisper-name",
-    INDEX_DATA: "daavyChatWhisperIndex",
-    INDEX_SELECTOR: "[data-daavy-chat-whisper-index]",
-    EDITABLE_ARIA_ATTRIBUTES: [
-        "aria-activedescendant",
-        "aria-autocomplete",
-        "aria-haspopup",
-        "aria-controls",
-        "aria-expanded"
-    ]
-};
 
 export class AutocompleteWhisper {
     static _trackedHosts = new Set();
@@ -108,8 +81,9 @@ export class AutocompleteWhisper {
             this._teardown(host);
         }
 
+        const AbortControllerCtor = host.ownerDocument?.defaultView?.AbortController ?? globalThis.AbortController;
         const state = {
-            controller: createAbortController(host),
+            controller: new AbortControllerCtor(),
             host,
             editor,
             editable,
@@ -137,7 +111,7 @@ export class AutocompleteWhisper {
         editable.addEventListener("input", refresh, { signal });
         editable.addEventListener("click", refresh, { signal });
         editable.addEventListener("focus", refresh, { signal });
-        editable.addEventListener("keydown", (event) => this._onKeydown(host, event), { signal });
+        editable.addEventListener("keydown", (event) => this._onKeydown(host, event), { signal, capture: true });
         editable.addEventListener("keyup", (event) => {
             if (AUTOCOMPLETE_WHISPER.CARET_NAVIGATION_KEYS.includes(event.key)) refresh();
         }, { signal });
@@ -224,6 +198,7 @@ export class AutocompleteWhisper {
             case "Enter":
             case "Tab":
                 event.preventDefault();
+                event.stopImmediatePropagation();
                 this._applySuggestion(host, state.activeIndex, { persist: event.shiftKey });
                 break;
             case "Escape":
@@ -358,7 +333,7 @@ function getCaretOffset(editable) {
     return getRangeOffset(editable, range.startContainer, range.startOffset);
 }
 
-export function getMatchState(editable) {
+function getMatchState(editable) {
     const editorText = getEditorText(editable);
     const caret = getCaretOffset(editable) ?? editorText.length;
     const prefix = editorText.match(AUTOCOMPLETE_WHISPER.PREFIX_PATTERN);
@@ -523,7 +498,7 @@ function updateActiveDescendant(state) {
     activeOption?.scrollIntoView?.({ block: "nearest" });
 }
 
-export function getSuggestions(match, users, maxResults) {
+function getSuggestions(match, users, maxResults) {
     const normalize = name => (name ?? "").trim().toLocaleLowerCase();
     const normalizedQuery = normalize(match.query);
     const selectedNames = new Set(match.selectedNames.map(normalize));

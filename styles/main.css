@@ -157,12 +157,12 @@ button.daavy-chat-feedback-action:hover {
     line-height: 1.1;
 }
 
-.daavy-chat-pin-request-preview header span,
-.daavy-chat-pin-request-to {
+.daavy-chat-pin-request-preview header span {
     font-size: var(--font-size-12, 12px);
 }
 
 .daavy-chat-pin-request-to {
+    font-size: var(--font-size-12, 12px);
     color: #2b225c;
 }
 
@@ -188,6 +188,7 @@ dialog:has(.daavy-chat-pin-manager-content) .form-footer button[data-action="clo
     color: #fff6f6;
     background: #7f2424;
     border-color: #c64b4b;
+    width: auto;
 }
 
 button.daavy-chat-pin-deny:hover,
@@ -302,10 +303,6 @@ button.daavy-chat-pin-deny:hover,
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-}
-
-.daavy-chat-pin-manager-item button {
-    width: auto;
 }
 
 .daavy-chat-tab-bar {

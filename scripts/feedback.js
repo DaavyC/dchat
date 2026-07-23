@@ -1,23 +1,25 @@
-import { MODULE_ID } from "./constants.js";
-import { getDocument, getElement } from "./utils.js";
+import {
+    FEEDBACK_ACTIONS_CLASS,
+    MODULE_ID,
+    SETTINGS_CLASSES
+} from "./constants.js";
+import { getDocument, getElement, i18nKey } from "./utils.js";
 
 const FEEDBACK_ENDPOINT = "https://feedback.daavyc.workers.dev";
 const FEEDBACK_TEMPLATE = `modules/${MODULE_ID}/templates/feedback.hbs`;
 const DONATE_URL = "https://ko-fi.com/daavy";
 const DISCORD_URL = "https://discord.gg/ZmFZxdGrta";
 const MAX_MESSAGE_LENGTH = 3000;
-const I18N_PREFIX = "daavy-chat.Feedback";
 const CATEGORIES = ["Bug", "Suggestion"];
-const FEEDBACK_ACTIONS_CLASS = "daavy-chat-settings-actions";
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 
-export class FeedbackForm extends HandlebarsApplicationMixin(ApplicationV2) {
+class FeedbackForm extends HandlebarsApplicationMixin(ApplicationV2) {
     static DEFAULT_OPTIONS = {
         id: "daavy-chat-feedback",
         tag: "form",
         window: {
-            title: `${I18N_PREFIX}.MenuLabel`,
+            title: i18nKey("Feedback.MenuLabel"),
             icon: "fa-solid fa-comment-dots",
             contentClasses: ["standard-form"],
         },
@@ -45,7 +47,7 @@ export class FeedbackForm extends HandlebarsApplicationMixin(ApplicationV2) {
         const category = String(formData.object.category ?? "").trim();
         const message = String(formData.object.message ?? "").trim();
         if (!CATEGORIES.includes(category) || !message || message.length > MAX_MESSAGE_LENGTH) {
-            ui.notifications.warn(game.i18n.localize(`${I18N_PREFIX}.Invalid`));
+            ui.notifications.warn(game.i18n.localize(i18nKey("Feedback.Invalid")));
             return;
         }
 
@@ -66,11 +68,11 @@ export class FeedbackForm extends HandlebarsApplicationMixin(ApplicationV2) {
 
             if (!response.ok) throw new Error(`Feedback request failed with status ${response.status}.`);
 
-            ui.notifications.info(game.i18n.localize(`${I18N_PREFIX}.Success`));
+            ui.notifications.info(game.i18n.localize(i18nKey("Feedback.Success")));
             await this.close();
         } catch (error) {
             console.error(`${MODULE_ID} | Unable to send feedback.`, error);
-            ui.notifications.error(game.i18n.localize(`${I18N_PREFIX}.Error`));
+            ui.notifications.error(game.i18n.localize(i18nKey("Feedback.Error")));
         } finally {
             this.#submitting = false;
             if (submitButton) submitButton.disabled = false;
@@ -96,7 +98,7 @@ export function injectFeedbackButton(renderedHtml) {
     const container = getElement(renderedHtml);
     if (!container || !game.user?.isGM || container.querySelector(`.${FEEDBACK_ACTIONS_CLASS}`)) return;
 
-    const groups = container.querySelectorAll(".daavy-chat-settings-group");
+    const groups = container.querySelectorAll(`.${SETTINGS_CLASSES.GROUP}`);
     const firstGroup = groups[0];
     if (!firstGroup) return;
 
@@ -104,25 +106,20 @@ export function injectFeedbackButton(renderedHtml) {
     const actions = documentRef.createElement("div");
     actions.className = FEEDBACK_ACTIONS_CLASS;
 
-    const donateButton = documentRef.createElement("button");
-    donateButton.type = "button";
-    donateButton.className = "daavy-chat-donate-action";
-    donateButton.innerHTML = `<i class="fa-solid fa-heart"></i> ${game.i18n.localize("daavy-chat.Donate.Label")}`;
-    donateButton.addEventListener("click", () => documentRef.defaultView.open(DONATE_URL, "_blank", "noopener,noreferrer"));
+    const buttons = [
+        ["daavy-chat-donate-action", "fa-solid fa-heart", "Donate.Label", () => documentRef.defaultView.open(DONATE_URL, "_blank", "noopener,noreferrer")],
+        ["daavy-chat-discord-action", "fa-brands fa-discord", "Discord.Label", () => documentRef.defaultView.open(DISCORD_URL, "_blank", "noopener,noreferrer")],
+        ["daavy-chat-feedback-action", "fa-solid fa-comment-dots", "Feedback.MenuLabel", () => new FeedbackForm().render({ force: true })]
+    ].map(([className, icon, labelKey, onClick]) => {
+        const button = documentRef.createElement("button");
+        button.type = "button";
+        button.className = className;
+        button.innerHTML = `<i class="${icon}"></i> ${game.i18n.localize(i18nKey(labelKey))}`;
+        button.addEventListener("click", onClick);
+        return button;
+    });
+    buttons[2].title = game.i18n.localize(i18nKey("Feedback.MenuHint"));
 
-    const discordButton = documentRef.createElement("button");
-    discordButton.type = "button";
-    discordButton.className = "daavy-chat-discord-action";
-    discordButton.innerHTML = `<i class="fa-brands fa-discord"></i> ${game.i18n.localize("daavy-chat.Discord.Label")}`;
-    discordButton.addEventListener("click", () => documentRef.defaultView.open(DISCORD_URL, "_blank", "noopener,noreferrer"));
-
-    const feedbackButton = documentRef.createElement("button");
-    feedbackButton.type = "button";
-    feedbackButton.className = "daavy-chat-feedback-action";
-    feedbackButton.title = game.i18n.localize(`${I18N_PREFIX}.MenuHint`);
-    feedbackButton.innerHTML = `<i class="fa-solid fa-comment-dots"></i> ${game.i18n.localize(`${I18N_PREFIX}.MenuLabel`)}`;
-    feedbackButton.addEventListener("click", () => new FeedbackForm().render({ force: true }));
-
-    actions.append(donateButton, discordButton, feedbackButton);
+    actions.append(...buttons);
     firstGroup.before(actions);
 }

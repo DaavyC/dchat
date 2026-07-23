@@ -13,6 +13,7 @@ import {
     classifyMessage,
     getDocument,
     getElement,
+    i18nKey,
     isPinnedMessage
 } from "./utils.js";
 import { AutocompleteWhisper } from "./features/autocomplete-whisper.js";
@@ -20,20 +21,13 @@ import { CollapsibleFormula } from "./features/cleaner-chat.js";
 import { HidePrivateMessages } from "./features/hide-private-messages.js";
 import { ChatPins, setPinRefreshHandler } from "./features/pins.js";
 import { HideDamageButtons, TraitFilter } from "./features/pf2e-only.js";
-import { registerDaavyChatHooks } from "./hooks.js";
-
-export { ChatPins } from "./features/pins.js";
-
-const i18nKey = key => `daavy-chat.${key}`;
+import "./hooks.js";
 
 export class ChatClearControls {
     static _observers = new WeakMap();
 
     static observeChatLog(renderedHtml) {
-        this._observeChatLog(getElement(renderedHtml));
-    }
-
-    static _observeChatLog(element) {
+        const element = getElement(renderedHtml);
         if (!element) return;
 
         this._observers.get(element)?.disconnect();
@@ -520,17 +514,11 @@ export function processFeatures(message, renderedHtml) {
     }
 }
 
-export function refreshChatUi(element = null) {
-    ChatTabsManager.refresh(element);
-}
-
 export function scheduleChatUiRefresh() {
-    requestAnimationFrame(() => refreshChatUi());
+    requestAnimationFrame(() => ChatTabsManager.refresh());
 }
 
 export function addChatNotification(message) {
     if (isSettingEnabled(SETTINGS.HIDE_PRIVATE_MESSAGES.key) && HidePrivateMessages.shouldHideMessage(message)) return;
     ChatTabsManager.addNotification(classifyMessage(message));
 }
-
-registerDaavyChatHooks();

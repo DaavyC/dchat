@@ -6,10 +6,6 @@ export class HidePrivateMessages {
     static _notifyPatched = false;
 
     static onReady() {
-        this._patchChatLogNotify();
-    }
-
-    static _patchChatLogNotify() {
         if (this._notifyPatched) return;
 
         const ChatLogClass = globalThis.foundry?.applications?.sidebar?.tabs?.ChatLog;

@@ -1,8 +1,7 @@
-import { SETTINGS } from "../constants.js";
+import { PROSE_MIRROR_SELECTOR, SETTINGS } from "../constants.js";
 import { isSettingEnabled } from "../settings.js";
 import { getElement } from "../utils.js";
 
-const PROSE_MIRROR_SELECTOR = "prose-mirror[name='message']";
 const HIDE_CHAT_FORMATTING_CLASS = "daavy-chat-hide-chat-formatting";
 const SHOW_FORMULA_CLASS = "daavy-chat-show";
 const ROLL_SELECTOR = ".dice-roll";
@@ -11,10 +10,6 @@ const FORMULA_SELECTOR = ".dice-formula";
 
 export class HideChatFormatting {
     static _observers = new WeakMap();
-
-    static onRenderChatInput(application, elements) {
-        this.refresh(application?.element, elements);
-    }
 
     static observe(renderedHtml) {
         const container = getElement(renderedHtml);

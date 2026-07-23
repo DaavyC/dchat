@@ -69,12 +69,12 @@ button.daavy-chat-feedback-cancel:focus-visible {
     background: #4b6f8a;
 }
 
-.daavy-chat-feedback-category:hover span,
-.daavy-chat-feedback-category input:checked + span {
+.daavy-chat-feedback-category:hover span {
     opacity: 1;
 }
 
 .daavy-chat-feedback-category input:checked + span {
+    opacity: 1;
     color: #ffffff;
     background: #5f86a3;
     border-color: transparent;

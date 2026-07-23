@@ -1,5 +1,9 @@
 export const MODULE_ID = "dchat";
 
+export const PIN_TEMPLATE_PATH = `modules/${MODULE_ID}/templates/main.hbs`;
+export const FEEDBACK_ACTIONS_CLASS = "daavy-chat-settings-actions";
+export const PROSE_MIRROR_SELECTOR = "prose-mirror[name='message']";
+
 export const MESSAGE_TYPES = {
     CHAT: "chat",
     GAME: "game",
@@ -62,7 +66,7 @@ export const SETTINGS = {
     }
 };
 
-export const SETTING_GROUPS = Object.freeze({
+export const SETTING_GROUPS = {
     Settings: [
         SETTINGS.AUTOCOMPLETE_WHISPER.key,
         SETTINGS.CLEANER_CHAT.key,
@@ -77,7 +81,13 @@ export const SETTING_GROUPS = Object.freeze({
         SETTINGS.HIDE_DAMAGE_TRAITS.key,
         SETTINGS.TRAIT_FILTER.key
     ]
-});
+};
+
+export const SETTINGS_CLASSES = {
+    ROW: "daavy-chat-settings-row",
+    GROUP: "daavy-chat-settings-group",
+    GROUP_TITLE: "daavy-chat-settings-group-title"
+};
 
 export const FEATURE_CLASSES = {
     CLEANER_CHAT: "daavy-chat-cleaner-chat",
@@ -126,9 +136,74 @@ export const CHAT_CLASSES = {
     FILTER_PREFIX: "daavy-chat-filter"
 };
 
+export const AUTOCOMPLETE_WHISPER = {
+    HOST_SELECTOR: "#chat-notifications, #chat-form, form.chat-form",
+    EDITOR_SELECTOR: "prose-mirror[name='message'], prose-mirror, .editor-content[contenteditable='true'], [contenteditable='true']",
+    MESSAGE_EDITOR_SELECTOR: "prose-mirror[name='message'], prose-mirror",
+    EDITABLE_SELECTOR: ".editor-content[contenteditable='true'], [contenteditable='true']",
+    MAX_RESULTS: 6,
+    CARET_NAVIGATION_KEYS: ["ArrowLeft", "ArrowRight", "Home", "End"],
+    PREFIX_PATTERN: /^(\/w|\/whisper)\s+/i,
+    HOST_CLASS: "daavy-chat-whisper-autocomplete-host",
+    POPUP_CLASS: "daavy-chat-whisper-autocomplete",
+    POPUP_ID_PREFIX: "daavy-chat-whisper",
+    OPTION_CLASS: "daavy-chat-whisper-option",
+    ACTIVE_OPTION_CLASS: CHAT_CLASSES.ACTIVE,
+    STATUS_CLASS: "daavy-chat-whisper-status",
+    ACTIVE_STATUS_CLASS: "is-active",
+    NAME_CLASS: "daavy-chat-whisper-name",
+    INDEX_DATA: "daavyChatWhisperIndex",
+    INDEX_SELECTOR: "[data-daavy-chat-whisper-index]",
+    EDITABLE_ARIA_ATTRIBUTES: [
+        "aria-activedescendant",
+        "aria-autocomplete",
+        "aria-haspopup",
+        "aria-controls",
+        "aria-expanded"
+    ]
+};
+
 export const CHAT_DATA = {
     TAB: "daavyChatTab",
     TYPE: "daavy-chat-type"
+};
+
+export const PF2E_CLASSES = {
+    FILTERED_TRAIT: "daavy-chat-filtered",
+    CLICKABLE_TRAIT: "daavy-chat-clickable",
+    HIDDEN_TRAIT: "daavy-chat-hidden",
+    EXPANDED_TRAITS: "daavy-chat-expanded",
+    HIDDEN_DAMAGE_BUTTONS: "daavy-chat-buttons-hidden",
+    TOGGLE_DAMAGE_BUTTONS: "daavy-chat-toggle-buttons"
+};
+
+export const PF2E_SELECTORS = {
+    TRAIT_TAGS: '.tags .tag:is([data-trait], [data-slug]):not(.tag_transparent)[data-tooltip]',
+    TRAIT_CONTAINERS: ".tags",
+    VISIBLE_TRAIT_TAGS: "span.tag:is([data-trait], [data-slug]):not(.tag_transparent)",
+    CLICKABLE_TRAIT_TAG: `span.tag.${PF2E_CLASSES.CLICKABLE_TRAIT}`,
+    DAMAGE_BUTTONS: "button.success[data-action='strike-damage'], button.critical-success[data-action='strike-damage']",
+    MESSAGE_METADATA: CHAT_SELECTORS.MESSAGE_METADATA,
+    MESSAGE_DELETE: CHAT_SELECTORS.MESSAGE_DELETE,
+    TOGGLE_DAMAGE_BUTTONS: `.${PF2E_CLASSES.TOGGLE_DAMAGE_BUTTONS}`
+};
+
+export const PF2E_DATA = {
+    TRAITS_LIMITED: "daavyChatLimited",
+    DAMAGE_BUTTONS_PROCESSED: "daavyChatButtonsProcessed"
+};
+
+export const PF2E_VISIBLE_TRAIT_LIMIT = 3;
+
+export const PF2E_I18N = {
+    SHOW_DAMAGE_BUTTONS: "daavy-chat.HideDamageButtons.Show",
+    HIDE_DAMAGE_BUTTONS: "daavy-chat.HideDamageButtons.Hide",
+    TOGGLE_DAMAGE_BUTTONS: "daavy-chat.HideDamageButtons.ToggleLabel"
+};
+
+export const PF2E_ICONS = {
+    DAMAGE_BUTTONS_HIDDEN: "fa-solid fa-eye-slash",
+    DAMAGE_BUTTONS_VISIBLE: "fa-solid fa-eye"
 };
 
 export const PF2E_TRAITS_TO_HIDE = [

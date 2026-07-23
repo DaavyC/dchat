@@ -1,15 +1,11 @@
 import {
     MODULE_ID,
     SETTINGS,
+    SETTINGS_CLASSES,
     SETTING_GROUPS
 } from "./constants.js";
 import { getDocument, getElement } from "./utils.js";
 
-const SETTINGS_CLASSES = {
-    ROW: "daavy-chat-settings-row",
-    GROUP: "daavy-chat-settings-group",
-    GROUP_TITLE: "daavy-chat-settings-group-title"
-};
 const SETTINGS_GROUP_PREFIX = "daavy-chat.Settings.Groups";
 
 export class SettingsLayout {

@@ -3,18 +3,18 @@ import {
     CHAT_SELECTORS,
     CHAT_TAB_CONFIG,
     MESSAGE_TYPES,
-    MODULE_ID
+    MODULE_ID,
+    PIN_TEMPLATE_PATH
 } from "../constants.js";
 import {
     classifyMessage,
     getDocument,
     getElement,
+    i18nKey,
     isPinnedMessage
 } from "../utils.js";
 
 let refreshPinsUi = () => {};
-const i18nKey = key => `daavy-chat.${key}`;
-const TEMPLATE_PATH = `modules/${MODULE_ID}/templates/main.hbs`;
 
 export function setPinRefreshHandler(handler) {
     refreshPinsUi = typeof handler === "function" ? handler : refreshPinsUi;
@@ -114,7 +114,7 @@ export class ChatPins {
         const selectedTab = this._getManagerActiveTab(pinnedMessages, activeTab);
         const activeMessages = pinnedMessages.filter(message => classifyMessage(message) === selectedTab);
 
-        return renderTemplate(TEMPLATE_PATH, {
+        return renderTemplate(PIN_TEMPLATE_PATH, {
             pinManager: true,
             activeTab: selectedTab,
             managerLabel: game.i18n.localize(i18nKey("Pin.Manager")),
@@ -318,7 +318,7 @@ export class ChatPins {
         new foundry.applications.api.DialogV2({
             window: { title: game.i18n.localize(i18nKey("Pin.RequestTitle")) },
             modal: true,
-            content: await renderTemplate(TEMPLATE_PATH, {
+            content: await renderTemplate(PIN_TEMPLATE_PATH, {
                 pinRequest: true,
                 requesterLabel: game.i18n.localize(i18nKey("Pin.Requester")),
                 requesterName: request.requesterName,
