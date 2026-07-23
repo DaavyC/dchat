@@ -3,13 +3,13 @@ import { injectFeedbackButton } from "./feedback.js";
 import { SettingsLayout } from "./settings.js";
 import { classifyMessage, getElement, isCurrentUserAuthor } from "./utils.js";
 import { AutocompleteWhisper } from "./features/autocomplete-whisper.js";
-import { HideChatFormatting } from "./features/cleaner-chat.js";
-import { HideChatInitiative } from "./features/hide-chat-initiative.js";
-import { HidePrivateMessages } from "./features/hide-private-messages.js";
-import { ChatPins } from "./features/pins.js";
 import {
+    ChatPins,
     ChatClearControls,
     ChatTabsManager,
+    HideChatFormatting,
+    HideChatInitiative,
+    HidePrivateMessages,
     addChatNotification,
     initializeFeatures,
     processFeatures,

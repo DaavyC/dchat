@@ -31,7 +31,7 @@ export class SettingsLayout {
 
         for (const row of rows) {
             row.remove();
-            row.classList.add(SETTINGS_CLASSES.ROW);
+            row.classList.add("daavy-chat-settings-row");
             group.appendChild(row);
         }
     }
@@ -44,7 +44,7 @@ export class SettingsLayout {
         const title = documentRef.createElement("h3");
         title.id = `${MODULE_ID}-settings-group-${groupKey}`;
         title.textContent = game.i18n.localize(`${SETTINGS_GROUP_PREFIX}.${groupKey}`);
-        title.className = SETTINGS_CLASSES.GROUP_TITLE;
+        title.className = "daavy-chat-settings-group-title";
         group.setAttribute("aria-labelledby", title.id);
         group.appendChild(title);
 

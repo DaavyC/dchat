@@ -3,9 +3,10 @@ import {
     CHAT_DATA,
     CHAT_SELECTORS,
     CHAT_TAB_CONFIG,
-    FEATURE_CLASSES,
     MESSAGE_TYPES,
     MODULE_ID,
+    PIN_TEMPLATE_PATH,
+    PROSE_MIRROR_SELECTOR,
     SETTINGS
 } from "./constants.js";
 import { isSettingEnabled, registerModuleSettings } from "./settings.js";
@@ -14,14 +15,495 @@ import {
     getDocument,
     getElement,
     i18nKey,
+    isCurrentUserAuthor,
     isPinnedMessage
 } from "./utils.js";
 import { AutocompleteWhisper } from "./features/autocomplete-whisper.js";
-import { CollapsibleFormula } from "./features/cleaner-chat.js";
-import { HidePrivateMessages } from "./features/hide-private-messages.js";
-import { ChatPins, setPinRefreshHandler } from "./features/pins.js";
-import { HideDamageButtons, TraitFilter } from "./features/pf2e-only.js";
+import { HideDamageButtons, TraitFilter } from "./features/pf2e.js";
 import "./hooks.js";
+
+const HIDE_CHAT_FORMATTING_CLASS = "daavy-chat-hide-chat-formatting";
+const SHOW_FORMULA_CLASS = "daavy-chat-show";
+const ROLL_SELECTOR = ".dice-roll";
+const ROLL_TITLE_SELECTOR = ".dice-roll h4";
+const FORMULA_SELECTOR = ".dice-formula";
+
+export class HideChatInitiative {
+    static preCreateChatMessage(message, creationData) {
+        if (!isSettingEnabled(SETTINGS.HIDE_CHAT_INITIATIVE.key)) return;
+
+        const messageData = creationData ? foundry.utils.expandObject(creationData) : message.toObject();
+        if (foundry.utils.getProperty(messageData, "flags.core.initiativeRoll") !== true) return;
+
+        return false;
+    }
+}
+
+export class HidePrivateMessages {
+    static _notifyPatched = false;
+
+    static onReady() {
+        if (this._notifyPatched) return;
+
+        const ChatLogClass = globalThis.foundry?.applications?.sidebar?.tabs?.ChatLog;
+        const originalNotify = ChatLogClass?.prototype?.notify;
+        if (typeof originalNotify !== "function") return;
+
+        ChatLogClass.prototype.notify = function (message, options) {
+            if (isSettingEnabled(SETTINGS.HIDE_PRIVATE_MESSAGES.key) && HidePrivateMessages.shouldHideMessage(message)) return;
+            return originalNotify.call(this, message, options);
+        };
+
+        this._notifyPatched = true;
+    }
+
+    static shouldHideMessage(message) {
+        if (!message) return false;
+
+        const isRoll = Boolean(message.isRoll || message.rolls?.length);
+        const isPrivate = Boolean(message.blind || message.whisper?.length);
+        const isPrivateRoll = isRoll && isPrivate;
+        return isPrivateRoll && !isCurrentUserAuthor(message) && message.isContentVisible === false;
+    }
+
+    static processMessage(message, renderedHtml) {
+        const messageElement = getElement(renderedHtml);
+        if (!messageElement || !this.shouldHideMessage(message)) return;
+
+        messageElement.hidden = true;
+        messageElement.setAttribute("aria-hidden", "true");
+    }
+}
+
+export class HideChatFormatting {
+    static _observers = new WeakMap();
+
+    static observe(renderedHtml) {
+        const container = getElement(renderedHtml);
+        if (!container) return;
+
+        this.refresh(container);
+        if (this._observers.has(container)) return;
+
+        const observer = new MutationObserver(() => this.refresh(container));
+        observer.observe(container, { childList: true, subtree: true });
+        this._observers.set(container, observer);
+    }
+
+    static refresh(...renderedRoots) {
+        const shouldHideFormatting = isSettingEnabled(SETTINGS.HIDE_CHAT_FORMATTING.key);
+
+        renderedRoots
+            .flatMap(getRenderedElements)
+            .flatMap(findChatEditors)
+            .forEach(editor => editor.classList.toggle(HIDE_CHAT_FORMATTING_CLASS, shouldHideFormatting));
+    }
+}
+
+function getRenderedElements(renderedRoot) {
+    const rootElement = getElement(renderedRoot);
+    if (rootElement) return [rootElement];
+    return Object.values(renderedRoot ?? {}).map(getElement).filter(Boolean);
+}
+
+function findChatEditors(rootElement) {
+    const editors = Array.from(rootElement.querySelectorAll(PROSE_MIRROR_SELECTOR));
+    if (rootElement.matches?.(PROSE_MIRROR_SELECTOR)) editors.unshift(rootElement);
+    return editors;
+}
+
+class CollapsibleFormula {
+    static processMessage(_message, renderedHtml) {
+        const messageElement = getElement(renderedHtml);
+        if (!messageElement) return;
+
+        messageElement.querySelectorAll(ROLL_SELECTOR).forEach(roll => {
+            const title = roll.querySelector(ROLL_TITLE_SELECTOR);
+            const formula = roll.querySelector(FORMULA_SELECTOR);
+            if (title && formula) {
+                title.addEventListener("click", (event) => {
+                    event.stopPropagation();
+                    formula.classList.toggle(SHOW_FORMULA_CLASS);
+                });
+            }
+        });
+    }
+}
+
+export class ChatPins {
+    static pendingRequest = null;
+    static _socketActive = false;
+
+    static onReady() {
+        if (this._socketActive || !game.socket?.on) return;
+        game.socket.on(`module.${MODULE_ID}`, payload => this._handleSocket(payload));
+        this._socketActive = true;
+    }
+
+    static processMessage(message, renderedHtml) {
+        const element = getElement(renderedHtml);
+        if (!element) return;
+
+        const messageType = classifyMessage(message);
+        const pinned = isPinnedMessage(message);
+        const mode = this._getPinMode(message, messageType, pinned);
+        this._setPinnedState(element, pinned, mode);
+        if (!mode) return;
+        this._injectToggle(message, element, pinned, mode);
+    }
+
+    static refresh(element) {
+        const container = getElement(element);
+        if (container) this._refreshContainer(container);
+    }
+
+    static preDeleteMessage(message) {
+        if (!isPinnedMessage(message)) return;
+
+        globalThis.ui?.notifications?.warn?.(game.i18n.localize(i18nKey("Pin.DeletePinned")));
+        return false;
+    }
+
+    static async unpinMessages(messages = []) {
+        for (const message of messages) {
+            if (!isPinnedMessage(message)) continue;
+            await this._setPinnedFlag(message, false);
+        }
+    }
+
+    static getPinnedMessages() {
+        return (game.messages.contents ?? []).filter(isPinnedMessage);
+    }
+
+    static createManagerButton(documentRef) {
+        const button = documentRef.createElement("button");
+        button.type = "button";
+        button.className = "ui-control icon fas fa-thumbtack daavy-chat-pin-manager";
+
+        const tooltip = game.i18n.localize(i18nKey("Pin.Manager"));
+        button.dataset.tooltip = tooltip;
+        button.title = tooltip;
+        button.setAttribute("aria-label", tooltip);
+
+        button.addEventListener("click", (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            this.showManager();
+        });
+
+        return button;
+    }
+
+    static injectManagerButton(toolbar, documentRef) {
+        const buttons = Array.from(toolbar.querySelectorAll(CHAT_SELECTORS.PIN_MANAGER));
+        const managerButton = buttons.shift() ?? this.createManagerButton(documentRef);
+        buttons.forEach(button => button.remove());
+
+        if (!toolbar.contains(managerButton)) toolbar.appendChild(managerButton);
+    }
+
+    static removeManagerButtons(toolbar) {
+        toolbar.querySelectorAll(CHAT_SELECTORS.PIN_MANAGER).forEach(button => button.remove());
+    }
+
+    static async showManager(activeTab = null) {
+        const dialog = new foundry.applications.api.DialogV2({
+            window: { title: game.i18n.localize(i18nKey("Pin.Manager")) },
+            content: await this._renderManagerContent(activeTab),
+            buttons: [{ action: "close", label: "Close" }]
+        });
+
+        dialog.addEventListener?.("render", event => this._bindManagerContent(event.target), { once: true });
+        dialog.render({ force: true });
+    }
+
+    static async _renderManagerContent(activeTab = null) {
+        const pinnedMessages = this.getPinnedMessages();
+        const selectedTab = this._getManagerActiveTab(pinnedMessages, activeTab);
+        const activeMessages = pinnedMessages.filter(message => classifyMessage(message) === selectedTab);
+
+        return renderTemplate(PIN_TEMPLATE_PATH, {
+            pinManager: true,
+            activeTab: selectedTab,
+            managerLabel: game.i18n.localize(i18nKey("Pin.Manager")),
+            unpinAllLabel: game.i18n.localize(i18nKey("Pin.ManagerUnpinAll")),
+            unpinLabel: game.i18n.localize(i18nKey("Pin.Unpin")),
+            emptyLabel: game.i18n.localize(i18nKey("Pin.ManagerEmpty")),
+            tabs: CHAT_TAB_CONFIG.map(tab => ({
+                id: tab.id,
+                icon: tab.icon,
+                label: game.i18n.localize(tab.label),
+                active: tab.id === selectedTab,
+                count: pinnedMessages.filter(message => classifyMessage(message) === tab.id).length
+            })),
+            messages: activeMessages.map(message => ({
+                id: message.id,
+                author: this._getMessageAuthor(message) || message.id,
+                time: this._getMessageTime(message),
+                preview: this._getTextPreview(message.content)
+            }))
+        });
+    }
+
+    static _getManagerActiveTab(pinnedMessages, activeTab = null) {
+        if (CHAT_TAB_CONFIG.some(tab => tab.id === activeTab)) return activeTab;
+        if (pinnedMessages.some(message => classifyMessage(message) === MESSAGE_TYPES.CHAT)) return MESSAGE_TYPES.CHAT;
+        return CHAT_TAB_CONFIG.find(tab => pinnedMessages.some(message => classifyMessage(message) === tab.id))?.id ?? MESSAGE_TYPES.CHAT;
+    }
+
+    static _refreshContainer(container) {
+        const messageList = container.querySelector(CHAT_SELECTORS.MESSAGE_LIST);
+        if (!messageList) return;
+
+        const messageElements = Array.from(messageList.querySelectorAll(CHAT_SELECTORS.MESSAGE_ID));
+        const pinnedElements = messageElements.filter(messageElement => {
+            const message = game.messages.get(messageElement.dataset.messageId);
+            const pinned = isPinnedMessage(message);
+            const mode = this._getPinMode(message, classifyMessage(message), pinned);
+            this._setPinnedState(messageElement, pinned, mode);
+            return pinned;
+        });
+
+        pinnedElements.reverse().forEach(messageElement => messageList.prepend(messageElement));
+    }
+
+    static _getPinMode(message, messageType, pinned) {
+        if (game.user?.isGM && message?.setFlag) return "pin";
+        if (!game.user?.isGM && messageType === MESSAGE_TYPES.WHISPER && !pinned && message?.id) return "request";
+        return null;
+    }
+
+    static _injectToggle(message, messageElement, pinned, mode) {
+        const metadata = messageElement.querySelector(CHAT_SELECTORS.MESSAGE_METADATA);
+        if (!metadata || metadata.querySelector(CHAT_SELECTORS.PIN_TOGGLE)) return;
+
+        const toggle = getDocument(metadata).createElement("a");
+        toggle.className = "daavy-chat-pin-toggle";
+        toggle.tabIndex = 0;
+        toggle.setAttribute("role", "button");
+
+        const togglePinned = async (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            if (mode === "pin") {
+                await message.setFlag(MODULE_ID, "pinned", isPinnedMessage(message) ? null : true);
+            } else {
+                this.requestPin(message);
+            }
+        };
+        toggle.addEventListener("click", togglePinned);
+        toggle.addEventListener("keydown", (event) => {
+            if (event.key === "Enter" || event.key === " ") togglePinned(event);
+        });
+
+        this._syncToggle(toggle, pinned, mode);
+
+        const deleteButton = metadata.querySelector(CHAT_SELECTORS.MESSAGE_DELETE);
+        metadata.insertBefore(toggle, deleteButton ?? metadata.firstChild);
+    }
+
+    static _bindManagerContent(dialog) {
+        dialog?.element?.addEventListener("click", async (event) => {
+            const content = event.target.closest(".daavy-chat-pin-manager-content");
+            if (!content) return;
+
+            const tabButton = event.target.closest("[data-daavy-chat-pin-tab]");
+            if (tabButton) {
+                await this._refreshManagerDialog(dialog, tabButton.dataset.daavyChatPinTab);
+                return;
+            }
+
+            const activeTab = content.dataset.daavyChatPinActiveTab;
+            if (event.target.closest(".daavy-chat-pin-manager-unpin-all")) {
+                await this.unpinMessages(this.getPinnedMessages().filter(message => classifyMessage(message) === activeTab));
+                await this._refreshManagerDialog(dialog, activeTab);
+                return;
+            }
+
+            const unpinButton = event.target.closest("[data-daavy-chat-unpin]");
+            if (!unpinButton) return;
+
+            const message = game.messages.get(unpinButton.dataset.daavyChatUnpin);
+            await this.unpinMessages(message ? [message] : []);
+            await this._refreshManagerDialog(dialog, activeTab);
+        });
+    }
+
+    static async _refreshManagerDialog(dialog, activeTab = null) {
+        const contentContainer = dialog?.element?.querySelector(".dialog-content");
+        if (!contentContainer) return;
+
+        contentContainer.innerHTML = await this._renderManagerContent(activeTab);
+    }
+
+    static _setPinnedState(messageElement, pinned, mode = null) {
+        messageElement.classList.toggle("daavy-chat-pinned", pinned);
+
+        const toggle = messageElement.querySelector(CHAT_SELECTORS.PIN_TOGGLE);
+        if (!toggle) return;
+        if (!mode) toggle.remove();
+        else this._syncToggle(toggle, pinned, mode);
+    }
+
+    static _syncToggle(toggle, pinned, mode = "pin") {
+        const label = game.i18n.localize(mode === "request" ? i18nKey("Pin.Request") : (pinned ? i18nKey("Pin.Unpin") : i18nKey("Pin.Pin")));
+        toggle.classList.toggle(CHAT_CLASSES.ACTIVE, pinned);
+        toggle.dataset.tooltip = label;
+        toggle.title = label;
+        toggle.setAttribute("aria-label", label);
+        toggle.innerHTML = `<i class="fas fa-thumbtack"></i>`;
+    }
+
+    static requestPin(message) {
+        const targetGm = this._getPinRequestGm();
+        if (!targetGm) {
+            globalThis.ui?.notifications?.warn?.(game.i18n.localize(i18nKey("Pin.NoGm")));
+            return;
+        }
+
+        game.socket?.emit?.(`module.${MODULE_ID}`, {
+            type: "pinRequest",
+            requestId: foundry.utils.randomID(),
+            requesterId: game.user.id,
+            requesterName: game.user.name,
+            targetGmId: targetGm.id,
+            messageId: message.id,
+            messageContent: message.content,
+            messageAuthor: this._getMessageAuthor(message),
+            messageTo: this._getMessageRecipients(message),
+            messageTime: this._getMessageTime(message)
+        });
+        globalThis.ui?.notifications?.info?.(game.i18n.localize(i18nKey("Pin.Sent")));
+    }
+
+    static async _handleSocket(payload) {
+        if (!payload || typeof payload !== "object") return;
+        if (payload.type === "pinRequest") return this._handlePinRequest(payload);
+        if (payload.type === "pinResponse") return this._handlePinResponse(payload);
+    }
+
+    static _handlePinResponse(response) {
+        if (response.requesterId !== game.user?.id) return;
+
+        const notificationKey = {
+            approved: i18nKey("Pin.Approved"),
+            denied: i18nKey("Pin.Denied"),
+            busy: i18nKey("Pin.Busy")
+        }[response.status];
+        if (!notificationKey) return;
+
+        const notify = response.status === "busy" || response.status === "denied" ? "warn" : "info";
+        globalThis.ui?.notifications?.[notify]?.(game.i18n.localize(notificationKey));
+    }
+
+    static async _handlePinRequest(request) {
+        if (!game.user?.isGM || request.targetGmId !== game.user.id) return;
+
+        if (this.pendingRequest) {
+            this._sendPinResponse(request, "busy");
+            return;
+        }
+
+        this.pendingRequest = request;
+        await this._showPinRequestDialog(request);
+    }
+
+    static async _showPinRequestDialog(request) {
+        const resolveRequest = async (status) => {
+            if (this.pendingRequest?.requestId !== request.requestId) return;
+            this.pendingRequest = null;
+            if (status === "approved") {
+                const message = game.messages.get(request.messageId);
+                if (message) await this._setPinnedFlag(message, true);
+            }
+            this._sendPinResponse(request, status);
+        };
+
+        new foundry.applications.api.DialogV2({
+            window: { title: game.i18n.localize(i18nKey("Pin.RequestTitle")) },
+            modal: true,
+            content: await renderTemplate(PIN_TEMPLATE_PATH, {
+                pinRequest: true,
+                requesterLabel: game.i18n.localize(i18nKey("Pin.Requester")),
+                requesterName: request.requesterName,
+                author: request.messageAuthor,
+                to: request.messageTo,
+                time: request.messageTime,
+                messageContent: request.messageContent ?? ""
+            }),
+            buttons: [
+                {
+                    action: "approved",
+                    icon: "fas fa-check",
+                    label: game.i18n.localize(i18nKey("Pin.Accept")),
+                    class: "daavy-chat-pin-accept",
+                    default: true,
+                    callback: () => resolveRequest("approved")
+                },
+                {
+                    action: "denied",
+                    icon: "fas fa-times",
+                    label: game.i18n.localize(i18nKey("Pin.Deny")),
+                    class: "daavy-chat-pin-deny",
+                    callback: () => resolveRequest("denied")
+                }
+            ],
+            close: () => resolveRequest("denied"),
+            rejectClose: false
+        }).render({ force: true });
+    }
+
+    static async _setPinnedFlag(message, pinned) {
+        if (typeof message?.setFlag !== "function") return false;
+        try {
+            await message.setFlag(MODULE_ID, "pinned", pinned ? true : null);
+            return true;
+        } catch {
+            return false;
+        }
+    }
+
+    static _getMessageAuthor(message) {
+        return message.speaker?.alias ?? game.users.get?.(message.user?.id ?? message.user)?.name ?? "";
+    }
+
+    static _getMessageRecipients(message) {
+        if (!Array.isArray(message.whisper) || !game.users?.get) return "";
+        return message.whisper
+            .map(userId => game.users.get(userId)?.name)
+            .filter(Boolean)
+            .join(", ");
+    }
+
+    static _getMessageTime(message) {
+        const timestamp = Number(message.timestamp ?? message._source?.timestamp);
+        if (!timestamp) return "";
+        return new Date(timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    }
+
+    static _getTextPreview(content = "") {
+        const documentRef = globalThis.document;
+        if (!documentRef) return String(content).slice(0, 120);
+
+        const preview = documentRef.createElement("div");
+        preview.innerHTML = content;
+        return (preview.textContent || "").trim().slice(0, 120);
+    }
+
+    static _sendPinResponse(request, status) {
+        game.socket?.emit?.(`module.${MODULE_ID}`, {
+            type: "pinResponse",
+            requestId: request.requestId,
+            requesterId: request.requesterId,
+            messageId: request.messageId,
+            status
+        });
+    }
+
+    static _getPinRequestGm() {
+        return game.users.contents.find(user => user.active && user.isGM) ?? null;
+    }
+}
 
 export class ChatClearControls {
     static _observers = new WeakMap();
@@ -44,7 +526,7 @@ export class ChatClearControls {
     static _createScopedClearButton(documentRef) {
         const button = documentRef.createElement("button");
         button.type = "button";
-        button.className = CHAT_CLASSES.SCOPED_CLEAR;
+        button.className = "ui-control icon fas fa-trash daavy-chat-scoped-clear";
 
         const tooltip = game.i18n.localize(i18nKey("Clear.Tooltip"));
         button.dataset.tooltip = tooltip;
@@ -67,7 +549,7 @@ export class ChatClearControls {
         const toolbar = ChatTabsManager._ensureModuleToolbar(element);
         if (!toolbar) return;
 
-        const scopedButtons = Array.from(toolbar.querySelectorAll(CHAT_SELECTORS.SCOPED_CLEAR));
+        const scopedButtons = Array.from(toolbar.querySelectorAll(".daavy-chat-scoped-clear"));
         if (!game.user?.isGM) {
             ChatPins.removeManagerButtons(toolbar);
             scopedButtons.forEach(button => button.remove());
@@ -80,7 +562,7 @@ export class ChatClearControls {
 
         const clearButton = scopedButton ?? this._createScopedClearButton(documentRef);
         element.querySelector(CHAT_SELECTORS.CONTROLS)
-            ?.querySelector(CHAT_SELECTORS.FOUNDRY_CLEAR_BUTTON)
+            ?.querySelector('button[data-action="flush"]')
             ?.remove();
 
         ChatPins.injectManagerButton(toolbar, documentRef);
@@ -200,13 +682,13 @@ export class ChatTabsManager {
         const toolbar = this._ensureModuleToolbar(element);
         if (!toolbar) return;
 
-        toolbar.querySelectorAll(CHAT_SELECTORS.TAB_BAR).forEach(tabBar => tabBar.remove());
-        toolbar.prepend(this._buildTabBar(getDocument(element)));
+        if (!toolbar.querySelector(CHAT_SELECTORS.TAB_BAR)) {
+            toolbar.prepend(this._buildTabBar(getDocument(element)));
+        }
         this._syncWhisperTarget(element);
-        this._applyFilterClass(element, messageLog, this.activeTab);
+        this._applyFilterClass(element, this.activeTab);
         this.classifyExistingMessages(element);
         ChatPins.refresh(element);
-        this._bindTabBar(element);
 
         ChatClearControls.injectClearButton(element);
     }
@@ -221,7 +703,7 @@ export class ChatTabsManager {
             const messageList = this._getMessageList(container);
             if (!messageList) continue;
 
-            this._applyFilterClass(container, messageList, tabId);
+            this._applyFilterClass(container, tabId);
             this._syncTabButtons(container, tabId);
             this._scrollToBottom(messageList);
         }
@@ -370,7 +852,7 @@ export class ChatTabsManager {
 
     static _getToolbarAnchor(element, messageLog) {
         return element.querySelector(CHAT_SELECTORS.CONTROLS)
-            ?? element.querySelector(CHAT_SELECTORS.FORM)
+            ?? element.querySelector("#chat-form, form.chat-form")
             ?? messageLog;
     }
 
@@ -386,7 +868,7 @@ export class ChatTabsManager {
 
     static _buildTabBar(documentRef) {
         const tabBar = documentRef.createElement("div");
-        tabBar.className = CHAT_CLASSES.TAB_BAR;
+        tabBar.className = "daavy-chat-tab-bar split-button";
         tabBar.append(...CHAT_TAB_CONFIG.map(tabConfig => this._buildTabButton(documentRef, tabConfig)));
         return tabBar;
     }
@@ -401,28 +883,20 @@ export class ChatTabsManager {
         button.dataset.tooltip = label;
         button.setAttribute("aria-label", label);
         button.setAttribute("aria-pressed", String(isActive));
+        button.addEventListener("click", () => this.switch(tabConfig.id));
 
         if (this.unreadTabs.has(tabConfig.id)) this._ensurePip(button);
         return button;
     }
 
-    static _bindTabBar(element) {
-        element.querySelector(CHAT_SELECTORS.TAB_BAR)?.addEventListener("click", (event) => {
-            const button = event.target.closest(CHAT_SELECTORS.TAB_DATA);
-            if (button) this.switch(button.dataset[CHAT_DATA.TAB]);
-        });
-    }
-
-    static _applyFilterClass(container, messageList, tabId) {
+    static _applyFilterClass(container, tabId) {
         const filterClasses = Object.values(MESSAGE_TYPES).map(tab => `${CHAT_CLASSES.FILTER_PREFIX}-${tab}`);
-        for (const element of [container, messageList]) {
-            element.classList.remove(...filterClasses);
-            element.classList.add(`${CHAT_CLASSES.FILTER_PREFIX}-${tabId}`);
-        }
+        container.classList.remove(...filterClasses);
+        container.classList.add(`${CHAT_CLASSES.FILTER_PREFIX}-${tabId}`);
     }
 
     static _syncTabButtons(container, tabId) {
-        container.querySelectorAll(CHAT_SELECTORS.TAB_BUTTON).forEach((button) => {
+        container.querySelectorAll(".daavy-chat-tab-bar .daavy-chat-tab").forEach((button) => {
             const isActive = button.dataset[CHAT_DATA.TAB] === tabId;
             button.classList.toggle(CHAT_CLASSES.ACTIVE, isActive);
             button.setAttribute("aria-pressed", String(isActive));
@@ -434,7 +908,7 @@ export class ChatTabsManager {
     static _syncWhisperTarget(container) {
         const tabBar = container.querySelector(CHAT_SELECTORS.TAB_BAR);
         const button = tabBar?.querySelector(`[data-daavy-chat-tab="${MESSAGE_TYPES.WHISPER}"]`);
-        container.querySelector(CHAT_SELECTORS.WHISPER_TARGET)?.remove();
+        container.querySelector(".daavy-chat-whisper-target")?.remove();
         if (!button) return;
 
         const label = game.i18n.localize(CHAT_TAB_CONFIG.find(tab => tab.id === MESSAGE_TYPES.WHISPER).label);
@@ -449,7 +923,7 @@ export class ChatTabsManager {
         const documentRef = getDocument(button);
         const target = documentRef.createElement("span");
         const targetLabel = game.i18n.localize(i18nKey("Whisper.To"));
-        target.className = CHAT_CLASSES.WHISPER_TARGET;
+        target.className = "daavy-chat-whisper-target";
         target.setAttribute("aria-live", "polite");
         target.append(`${targetLabel}\u00a0`);
 
@@ -472,7 +946,7 @@ export class ChatTabsManager {
         if (button.querySelector(CHAT_SELECTORS.PIP)) return;
 
         const pip = getDocument(button).createElement("span");
-        pip.className = CHAT_CLASSES.PIP;
+        pip.className = "daavy-chat-pip";
         button.appendChild(pip);
     }
 
@@ -484,18 +958,17 @@ export class ChatTabsManager {
 }
 
 const messageFeatures = [
-    { setting: SETTINGS.CLEANER_CHAT.key, css: FEATURE_CLASSES.CLEANER_CHAT },
-    { setting: SETTINGS.HIDE_DAMAGE_TRAITS.key, css: FEATURE_CLASSES.HIDE_DAMAGE_TRAITS },
-    { handler: TraitFilter, setting: SETTINGS.TRAIT_FILTER.key, css: FEATURE_CLASSES.TRAIT_FILTER },
-    { handler: CollapsibleFormula, setting: SETTINGS.COLLAPSIBLE_FORMULA.key, css: FEATURE_CLASSES.COLLAPSIBLE_FORMULA },
-    { setting: SETTINGS.COMPACT_CHAT.key, css: FEATURE_CLASSES.COMPACT_CHAT },
+    { setting: SETTINGS.CLEANER_CHAT.key, css: "daavy-chat-cleaner-chat" },
+    { setting: SETTINGS.HIDE_DAMAGE_TRAITS.key, css: "daavy-chat-hide-damage-traits" },
+    { handler: TraitFilter, setting: SETTINGS.TRAIT_FILTER.key, css: "daavy-chat-trait-filter" },
+    { handler: CollapsibleFormula, setting: SETTINGS.COLLAPSIBLE_FORMULA.key, css: "daavy-chat-collapsible-formula" },
+    { setting: SETTINGS.COMPACT_CHAT.key, css: "daavy-chat-compact-chat" },
     { handler: HidePrivateMessages, setting: SETTINGS.HIDE_PRIVATE_MESSAGES.key },
     { handler: HideDamageButtons, setting: SETTINGS.HIDE_DAMAGE_BUTTONS.key }
 ];
 
 export function initializeFeatures() {
     registerModuleSettings();
-    setPinRefreshHandler(scheduleChatUiRefresh);
     AutocompleteWhisper.init();
 }
 

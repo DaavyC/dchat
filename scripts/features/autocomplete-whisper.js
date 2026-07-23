@@ -113,7 +113,7 @@ export class AutocompleteWhisper {
         editable.addEventListener("focus", refresh, { signal });
         editable.addEventListener("keydown", (event) => this._onKeydown(host, event), { signal, capture: true });
         editable.addEventListener("keyup", (event) => {
-            if (AUTOCOMPLETE_WHISPER.CARET_NAVIGATION_KEYS.includes(event.key)) refresh();
+            if (["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) refresh();
         }, { signal });
         editable.addEventListener("blur", () => {
             requestAnimationFrame(() => hidePopup(state));
@@ -136,7 +136,7 @@ export class AutocompleteWhisper {
             event.preventDefault();
         }, { signal });
         popup.addEventListener("click", (event) => {
-            const option = event.target.closest(AUTOCOMPLETE_WHISPER.INDEX_SELECTOR);
+            const option = event.target.closest("[data-daavy-chat-whisper-index]");
             if (!option) return;
             const index = Number(option.dataset[AUTOCOMPLETE_WHISPER.INDEX_DATA]);
             this._applySuggestion(host, index, { persist: event.shiftKey });
@@ -165,7 +165,7 @@ export class AutocompleteWhisper {
             return;
         }
 
-        state.suggestions = getSuggestions(state.match, game.users.contents, AUTOCOMPLETE_WHISPER.MAX_RESULTS);
+        state.suggestions = getSuggestions(state.match, game.users.contents, 6);
         state.activeIndex = Math.min(state.activeIndex, Math.max(state.suggestions.length - 1, 0));
 
         if (!state.suggestions.length) {
@@ -336,7 +336,7 @@ function getCaretOffset(editable) {
 function getMatchState(editable) {
     const editorText = getEditorText(editable);
     const caret = getCaretOffset(editable) ?? editorText.length;
-    const prefix = editorText.match(AUTOCOMPLETE_WHISPER.PREFIX_PATTERN);
+    const prefix = editorText.match(/^(\/w|\/whisper)\s+/i);
     if (!prefix) return null;
 
     const targetStart = prefix[0].length;
@@ -412,7 +412,7 @@ function resolveHost(rootElement, hostSelector) {
 }
 
 function resolveEditor(host) {
-    return host.querySelector(AUTOCOMPLETE_WHISPER.MESSAGE_EDITOR_SELECTOR)
+    return host.querySelector("prose-mirror[name='message'], prose-mirror")
         ?? host.querySelector(AUTOCOMPLETE_WHISPER.EDITABLE_SELECTOR);
 }
 
@@ -429,7 +429,7 @@ function createPopup(host) {
     const documentRef = getDocument(host);
     const popup = documentRef.createElement("div");
     popup.className = AUTOCOMPLETE_WHISPER.POPUP_CLASS;
-    popup.id = `${AUTOCOMPLETE_WHISPER.POPUP_ID_PREFIX}-${foundry.utils.randomID()}`;
+    popup.id = `daavy-chat-whisper-${foundry.utils.randomID()}`;
     popup.hidden = true;
     popup.setAttribute("role", "listbox");
     host.appendChild(popup);
@@ -444,7 +444,8 @@ function prepareEditable(editable, popupId) {
 }
 
 function clearEditableState(editable) {
-    AUTOCOMPLETE_WHISPER.EDITABLE_ARIA_ATTRIBUTES.forEach(attribute => editable.removeAttribute(attribute));
+    ["aria-activedescendant", "aria-autocomplete", "aria-haspopup", "aria-controls", "aria-expanded"]
+        .forEach(attribute => editable.removeAttribute(attribute));
 }
 
 function renderPopup(state) {
@@ -475,10 +476,10 @@ function createSuggestionOption(documentRef, state, suggestion, index) {
     option.setAttribute("aria-selected", String(isActive));
 
     const status = documentRef.createElement("span");
-    status.className = `${AUTOCOMPLETE_WHISPER.STATUS_CLASS}${suggestion.active ? ` ${AUTOCOMPLETE_WHISPER.ACTIVE_STATUS_CLASS}` : ""}`;
+    status.className = `daavy-chat-whisper-status${suggestion.active ? " is-active" : ""}`;
 
     const name = documentRef.createElement("span");
-    name.className = AUTOCOMPLETE_WHISPER.NAME_CLASS;
+    name.className = "daavy-chat-whisper-name";
     name.textContent = suggestion.name;
 
     option.append(status, name);

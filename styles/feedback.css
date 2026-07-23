@@ -67,9 +67,6 @@ button.daavy-chat-feedback-cancel:focus-visible {
 
 .daavy-chat-feedback-category:hover span {
     background: #4b6f8a;
-}
-
-.daavy-chat-feedback-category:hover span {
     opacity: 1;
 }
 
