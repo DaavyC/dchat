@@ -136,10 +136,6 @@ export const PF2E_CLASSES = {
     TOGGLE_DAMAGE_BUTTONS: "daavy-chat-toggle-buttons"
 };
 
-export const PF2E_SELECTORS = {
-    TOGGLE_DAMAGE_BUTTONS: `.${PF2E_CLASSES.TOGGLE_DAMAGE_BUTTONS}`
-};
-
 export const PF2E_DATA = {
     TRAITS_LIMITED: "daavyChatLimited",
     DAMAGE_BUTTONS_PROCESSED: "daavyChatButtonsProcessed"

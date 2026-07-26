@@ -338,18 +338,15 @@ button.daavy-chat-pin-deny:hover,
     50% { transform: scale(1.3); opacity: 0.7; }
 }
 
-.daavy-chat-filter-chat .message[data-daavy-chat-type="game"],
-.daavy-chat-filter-chat .message[data-daavy-chat-type="whisper"] {
+.daavy-chat-filter-chat .message:is([data-daavy-chat-type="game"], [data-daavy-chat-type="whisper"]) {
     display: none !important;
 }
 
-.daavy-chat-filter-game .message[data-daavy-chat-type="chat"],
-.daavy-chat-filter-game .message[data-daavy-chat-type="whisper"] {
+.daavy-chat-filter-game .message:is([data-daavy-chat-type="chat"], [data-daavy-chat-type="whisper"]) {
     display: none !important;
 }
 
-.daavy-chat-filter-whisper .message[data-daavy-chat-type="chat"],
-.daavy-chat-filter-whisper .message[data-daavy-chat-type="game"] {
+.daavy-chat-filter-whisper .message:is([data-daavy-chat-type="chat"], [data-daavy-chat-type="game"]) {
     display: none !important;
 }
 

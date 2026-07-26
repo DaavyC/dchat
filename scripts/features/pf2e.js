@@ -1,17 +1,13 @@
 import {
     PF2E_CLASSES,
     PF2E_DATA,
-    PF2E_SELECTORS,
     PF2E_TRAITS_TO_HIDE,
     PF2E_VISIBLE_TRAIT_LIMIT
 } from "../constants.js";
-import { getDocument, getElement, isCurrentUserAuthor } from "../utils.js";
+import { getDocument, isCurrentUserAuthor } from "../utils.js";
 
 export class TraitFilter {
-    static processMessage(_message, renderedHtml) {
-        const messageElement = getElement(renderedHtml);
-        if (!messageElement) return;
-
+    static processMessage(_message, messageElement) {
         const traitTags = messageElement.querySelectorAll('.tags .tag:is([data-trait], [data-slug]):not(.tag_transparent)[data-tooltip]');
         for (const tag of traitTags) {
             const tooltip = tag.dataset.tooltip;
@@ -21,7 +17,6 @@ export class TraitFilter {
             const shouldHide = PF2E_TRAITS_TO_HIDE.some(trait => tooltipLower.endsWith(trait));
 
             if (shouldHide) {
-                tag.style.display = "none";
                 tag.classList.add(PF2E_CLASSES.FILTERED_TRAIT);
             }
         }
@@ -57,9 +52,8 @@ export class TraitFilter {
 }
 
 export class HideDamageButtons {
-    static processMessage(message, renderedHtml) {
-        const messageElement = getElement(renderedHtml);
-        if (!messageElement || messageElement.dataset[PF2E_DATA.DAMAGE_BUTTONS_PROCESSED]) return;
+    static processMessage(message, messageElement) {
+        if (messageElement.dataset[PF2E_DATA.DAMAGE_BUTTONS_PROCESSED]) return;
 
         const damageButtons = messageElement.querySelectorAll("button.success[data-action='strike-damage'], button.critical-success[data-action='strike-damage']");
         if (!damageButtons.length) return;
@@ -72,7 +66,7 @@ export class HideDamageButtons {
         damageButtons.forEach(button => {
             button.addEventListener("click", () => {
                 this._setButtonsHidden(damageButtons, true);
-                const toggleIcon = messageElement.querySelector(PF2E_SELECTORS.TOGGLE_DAMAGE_BUTTONS);
+                const toggleIcon = messageElement.querySelector(`.${PF2E_CLASSES.TOGGLE_DAMAGE_BUTTONS}`);
                 if (toggleIcon) this._setToggleIcon(toggleIcon, true);
             });
         });
@@ -95,7 +89,7 @@ export class HideDamageButtons {
     }
 
     static _addVisibilityToggle(messageMetadata, damageButtons) {
-        if (messageMetadata.querySelector(PF2E_SELECTORS.TOGGLE_DAMAGE_BUTTONS)) return;
+        if (messageMetadata.querySelector(`.${PF2E_CLASSES.TOGGLE_DAMAGE_BUTTONS}`)) return;
 
         const documentRef = getDocument(messageMetadata);
         const toggleIcon = documentRef.createElement("a");
@@ -118,10 +112,6 @@ export class HideDamageButtons {
         });
 
         const deleteButton = messageMetadata.querySelector(".message-delete");
-        if (deleteButton) {
-            messageMetadata.insertBefore(toggleIcon, deleteButton.nextSibling);
-        } else {
-            messageMetadata.appendChild(toggleIcon);
-        }
+        messageMetadata.insertBefore(toggleIcon, deleteButton?.nextSibling ?? null);
     }
 }

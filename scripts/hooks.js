@@ -1,6 +1,6 @@
 import { CHAT_SELECTORS, MESSAGE_TYPES } from "./constants.js";
 import { injectFeedbackButton } from "./feedback.js";
-import { SettingsLayout } from "./settings.js";
+import { registerModuleSettings, SettingsLayout } from "./settings.js";
 import { classifyMessage, getElement, isCurrentUserAuthor } from "./utils.js";
 import { AutocompleteWhisper } from "./features/autocomplete-whisper.js";
 import {
@@ -11,13 +11,13 @@ import {
     HideChatInitiative,
     HidePrivateMessages,
     addChatNotification,
-    initializeFeatures,
     processFeatures,
     scheduleChatUiRefresh
 } from "./main.js";
 
 Hooks.once("init", () => {
-    initializeFeatures();
+    registerModuleSettings();
+    AutocompleteWhisper.init();
 });
 
 Hooks.once("ready", () => {

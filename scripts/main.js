@@ -9,7 +9,7 @@ import {
     PROSE_MIRROR_SELECTOR,
     SETTINGS
 } from "./constants.js";
-import { isSettingEnabled, registerModuleSettings } from "./settings.js";
+import { isSettingEnabled } from "./settings.js";
 import {
     classifyMessage,
     getDocument,
@@ -18,7 +18,6 @@ import {
     isCurrentUserAuthor,
     isPinnedMessage
 } from "./utils.js";
-import { AutocompleteWhisper } from "./features/autocomplete-whisper.js";
 import { HideDamageButtons, TraitFilter } from "./features/pf2e.js";
 import "./hooks.js";
 
@@ -66,9 +65,8 @@ export class HidePrivateMessages {
         return isPrivateRoll && !isCurrentUserAuthor(message) && message.isContentVisible === false;
     }
 
-    static processMessage(message, renderedHtml) {
-        const messageElement = getElement(renderedHtml);
-        if (!messageElement || !this.shouldHideMessage(message)) return;
+    static processMessage(message, messageElement) {
+        if (!this.shouldHideMessage(message)) return;
 
         messageElement.hidden = true;
         messageElement.setAttribute("aria-hidden", "true");
@@ -113,10 +111,7 @@ function findChatEditors(rootElement) {
 }
 
 class CollapsibleFormula {
-    static processMessage(_message, renderedHtml) {
-        const messageElement = getElement(renderedHtml);
-        if (!messageElement) return;
-
+    static processMessage(_message, messageElement) {
         messageElement.querySelectorAll(ROLL_SELECTOR).forEach(roll => {
             const title = roll.querySelector(ROLL_TITLE_SELECTOR);
             const formula = roll.querySelector(FORMULA_SELECTOR);
@@ -355,7 +350,7 @@ export class ChatPins {
     }
 
     static requestPin(message) {
-        const targetGm = this._getPinRequestGm();
+        const targetGm = game.users.contents.find(user => user.active && user.isGM);
         if (!targetGm) {
             globalThis.ui?.notifications?.warn?.(game.i18n.localize(i18nKey("Pin.NoGm")));
             return;
@@ -500,9 +495,6 @@ export class ChatPins {
         });
     }
 
-    static _getPinRequestGm() {
-        return game.users.contents.find(user => user.active && user.isGM) ?? null;
-    }
 }
 
 export class ChatClearControls {
@@ -660,7 +652,9 @@ export class ChatTabsManager {
         const messageLog = this._getMessageList(element);
         if (!messageLog) return null;
 
-        const anchor = this._getToolbarAnchor(element, messageLog);
+        const anchor = element.querySelector(CHAT_SELECTORS.CONTROLS)
+            ?? element.querySelector("#chat-form, form.chat-form")
+            ?? messageLog;
         const targetParent = anchor?.parentElement;
         if (!targetParent) return null;
 
@@ -705,7 +699,9 @@ export class ChatTabsManager {
 
             this._applyFilterClass(container, tabId);
             this._syncTabButtons(container, tabId);
-            this._scrollToBottom(messageList);
+            requestAnimationFrame(() => {
+                messageList.scrollTop = messageList.scrollHeight;
+            });
         }
     }
 
@@ -850,12 +846,6 @@ export class ChatTabsManager {
         return container.querySelector(CHAT_SELECTORS.MESSAGE_LIST);
     }
 
-    static _getToolbarAnchor(element, messageLog) {
-        return element.querySelector(CHAT_SELECTORS.CONTROLS)
-            ?? element.querySelector("#chat-form, form.chat-form")
-            ?? messageLog;
-    }
-
     static _getOrCreateToolbar(element) {
         const existing = element.querySelector(`:scope > .${CHAT_CLASSES.MODULE_TOOLBAR}`)
             ?? element.querySelector(`.${CHAT_CLASSES.MODULE_TOOLBAR}`);
@@ -950,11 +940,6 @@ export class ChatTabsManager {
         button.appendChild(pip);
     }
 
-    static _scrollToBottom(messageList) {
-        requestAnimationFrame(() => {
-            messageList.scrollTop = messageList.scrollHeight;
-        });
-    }
 }
 
 const messageFeatures = [
@@ -967,11 +952,6 @@ const messageFeatures = [
     { handler: HideDamageButtons, setting: SETTINGS.HIDE_DAMAGE_BUTTONS.key }
 ];
 
-export function initializeFeatures() {
-    registerModuleSettings();
-    AutocompleteWhisper.init();
-}
-
 export function processFeatures(message, renderedHtml) {
     const element = getElement(renderedHtml);
     if (!element) return;
@@ -983,7 +963,7 @@ export function processFeatures(message, renderedHtml) {
         if (!isSettingEnabled(feature.setting)) continue;
 
         if (feature.css) element.classList.add(feature.css);
-        feature.handler?.processMessage?.(message, renderedHtml);
+        feature.handler?.processMessage?.(message, element);
     }
 }
 
