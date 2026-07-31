@@ -17,14 +17,6 @@
         "Name": "Collapsible Formula",
         "Hint": "Hide dice formulas until clicked."
       },
-      "compactChat": {
-        "Name": "Compact Chat",
-        "Hint": "Apply a more compact chat layout."
-      },
-      "autocompleteWhisper": {
-        "Name": "Autocomplete Whisper",
-        "Hint": "Suggest player names while typing /w or /whisper in chat."
-      },
       "hideChatInitiative": {
         "Name": "Hide Chat Initiative",
         "Hint": "Prevent initiative roll messages from being created in chat."

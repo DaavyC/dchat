@@ -36,10 +36,7 @@ function isElement(candidateElement) {
 }
 
 export function getElement(renderedHtml) {
-    if (!renderedHtml) return null;
-    if (isElement(renderedHtml)) return renderedHtml;
-    if (isElement(renderedHtml[0])) return renderedHtml[0];
-    return null;
+    return isElement(renderedHtml) ? renderedHtml : null;
 }
 
 export function getDocument(element = null) {

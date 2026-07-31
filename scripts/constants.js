@@ -26,16 +26,6 @@ export const SETTINGS = {
         name: "daavy-chat.Settings.CollapsibleFormula.Name",
         hint: "daavy-chat.Settings.CollapsibleFormula.Hint"
     },
-    COMPACT_CHAT: {
-        key: "compactChat",
-        name: "daavy-chat.Settings.compactChat.Name",
-        hint: "daavy-chat.Settings.compactChat.Hint"
-    },
-    AUTOCOMPLETE_WHISPER: {
-        key: "autocompleteWhisper",
-        name: "daavy-chat.Settings.autocompleteWhisper.Name",
-        hint: "daavy-chat.Settings.autocompleteWhisper.Hint"
-    },
     HIDE_CHAT_INITIATIVE: {
         key: "hideChatInitiative",
         name: "daavy-chat.Settings.hideChatInitiative.Name",
@@ -68,10 +58,8 @@ export const SETTINGS = {
 
 export const SETTING_GROUPS = {
     Settings: [
-        SETTINGS.AUTOCOMPLETE_WHISPER.key,
         SETTINGS.CLEANER_CHAT.key,
         SETTINGS.COLLAPSIBLE_FORMULA.key,
-        SETTINGS.COMPACT_CHAT.key,
         SETTINGS.HIDE_CHAT_FORMATTING.key,
         SETTINGS.HIDE_CHAT_INITIATIVE.key,
         SETTINGS.HIDE_PRIVATE_MESSAGES.key
@@ -110,8 +98,17 @@ export const CHAT_CLASSES = {
     MODULE_TOOLBAR: "daavy-chat-module-toolbar",
     TAB_BUTTON: "daavy-chat-tab",
     ACTIVE: "active",
-    FILTER_PREFIX: "daavy-chat-filter"
+    FILTER_PREFIX: "daavy-chat-filter",
+    MENTIONED: "daavy-chat-mentioned",
+    MENTION: "daavy-chat-mention",
+    MERGE_START: "daavy-chat-merge-start",
+    MERGE_CONTINUATION: "daavy-chat-merge-continuation"
 };
+
+export const CHAT_PIP_COLOR = "#ffffff";
+export const CHAT_MENTION_PIP_COLOR = "#d6a400";
+export const CHAT_MENTION_BORDER_COLOR = "#d6a400";
+export const CHAT_MENTION_HIGHLIGHT_DURATION = 60_000;
 
 export const AUTOCOMPLETE_WHISPER = {
     HOST_SELECTOR: "#chat-notifications, #chat-form, form.chat-form",

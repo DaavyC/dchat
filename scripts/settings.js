@@ -8,56 +8,53 @@ import { getDocument, getElement } from "./utils.js";
 
 const SETTINGS_GROUP_PREFIX = "daavy-chat.Settings.Groups";
 
-export class SettingsLayout {
-    static groupSettings(renderedHtml) {
-        const container = getElement(renderedHtml);
-        if (!container) return;
+export function groupSettings(renderedHtml) {
+    const container = getElement(renderedHtml);
+    if (!container) return;
 
-        const documentRef = getDocument(container);
+    const documentRef = getDocument(container);
 
-        for (const [groupKey, settingKeys] of Object.entries(SETTING_GROUPS)) {
-            this._groupSettingRows(container, documentRef, groupKey, settingKeys);
-        }
+    for (const [groupKey, settingKeys] of Object.entries(SETTING_GROUPS)) {
+        groupSettingRows(container, documentRef, groupKey, settingKeys);
     }
+}
 
-    static _groupSettingRows(container, documentRef, groupKey, settingKeys) {
-        const rows = settingKeys
-            .map(key => this._findSettingRow(container, key))
-            .filter(row => row && !row.closest(`.${SETTINGS_CLASSES.GROUP}`));
-        if (!rows.length) return;
+function groupSettingRows(container, documentRef, groupKey, settingKeys) {
+    const rows = settingKeys
+        .map(key => findSettingRow(container, key))
+        .filter(row => row && !row.closest(`.${SETTINGS_CLASSES.GROUP}`));
+    if (!rows.length) return;
 
-        const group = this._createGroup(documentRef, groupKey);
-        rows[0].replaceWith(group);
+    const group = createGroup(documentRef, groupKey);
+    rows[0].replaceWith(group);
 
-        for (const row of rows) {
-            row.remove();
-            row.classList.add("daavy-chat-settings-row");
-            group.appendChild(row);
-        }
+    for (const row of rows) {
+        row.remove();
+        row.classList.add("daavy-chat-settings-row");
+        group.appendChild(row);
     }
+}
 
-    static _createGroup(documentRef, groupKey) {
-        const group = documentRef.createElement("div");
-        group.className = SETTINGS_CLASSES.GROUP;
-        group.setAttribute("role", "group");
+function createGroup(documentRef, groupKey) {
+    const group = documentRef.createElement("div");
+    group.className = SETTINGS_CLASSES.GROUP;
+    group.setAttribute("role", "group");
 
-        const title = documentRef.createElement("h3");
-        title.id = `${MODULE_ID}-settings-group-${groupKey}`;
-        title.textContent = game.i18n.localize(`${SETTINGS_GROUP_PREFIX}.${groupKey}`);
-        title.className = "daavy-chat-settings-group-title";
-        group.setAttribute("aria-labelledby", title.id);
-        group.appendChild(title);
+    const title = documentRef.createElement("h3");
+    title.id = `${MODULE_ID}-settings-group-${groupKey}`;
+    title.textContent = game.i18n.localize(`${SETTINGS_GROUP_PREFIX}.${groupKey}`);
+    title.className = "daavy-chat-settings-group-title";
+    group.setAttribute("aria-labelledby", title.id);
+    group.appendChild(title);
 
-        return group;
-    }
+    return group;
+}
 
-    static _findSettingRow(container, key) {
-        const settingId = `${MODULE_ID}.${key}`;
-        return container.querySelector(`[data-setting-id="${settingId}"]`)?.closest(".form-group")
-            ?? container.querySelector(`[id$="${settingId}"]`)?.closest(".form-group")
-            ?? null;
-    }
-
+function findSettingRow(container, key) {
+    const settingId = `${MODULE_ID}.${key}`;
+    return container.querySelector(`[data-setting-id="${settingId}"]`)?.closest(".form-group")
+        ?? container.querySelector(`[id$="${settingId}"]`)?.closest(".form-group")
+        ?? null;
 }
 
 export function registerModuleSettings() {

@@ -327,7 +327,7 @@ button.daavy-chat-pin-deny:hover,
     width: 7px;
     height: 7px;
     border-radius: 50%;
-    background: var(--color-shadow-highlight, #ffffff);
+    background: #ffffff !important;
     box-shadow: 0 0 4px rgba(255, 255, 255, 0.6);
     animation: daavy-chat-pip-pulse 1.5s ease-in-out infinite;
     pointer-events: none;
@@ -351,11 +351,9 @@ button.daavy-chat-pin-deny:hover,
 }
 
 .chat-message.daavy-chat-cleaner-chat header img,
-.chat-message.daavy-chat-cleaner-chat .message-header img,
 .chat-message.daavy-chat-cleaner-chat .message-portrait,
 .chat-message.daavy-chat-cleaner-chat [class*="portrait"],
-.chat-message.daavy-chat-cleaner-chat header span.user,
-.chat-message.daavy-chat-cleaner-chat .message-header span.user {
+.chat-message.daavy-chat-cleaner-chat header span.user {
     display: none !important;
 }
 
@@ -364,7 +362,7 @@ button.daavy-chat-pin-deny:hover,
 }
 
 .chat-message.daavy-chat-cleaner-chat header,
-.chat-message.daavy-chat-cleaner-chat .message-header {
+.chat-message.daavy-chat-cleaner-chat header {
     display: flex !important;
     align-items: baseline !important;
     grid-template-columns: none !important;
@@ -395,27 +393,6 @@ prose-mirror.daavy-chat-hide-chat-formatting {
 
 prose-mirror.daavy-chat-hide-chat-formatting > .menu-container {
     display: none !important;
-}
-
-.chat-message.daavy-chat-compact-chat header,
-.chat-message.daavy-chat-compact-chat .message-header {
-    display: flex !important;
-    flex-wrap: wrap !important;
-    align-items: center !important;
-    line-height: 1 !important;
-}
-
-.chat-message.daavy-chat-compact-chat header .message-sender,
-.chat-message.daavy-chat-compact-chat .message-header .message-sender {
-    margin-right: 5px !important;
-    margin-bottom: 0 !important;
-}
-
-.chat-message.daavy-chat-compact-chat header .flavor-text,
-.chat-message.daavy-chat-compact-chat .message-header .flavor-text {
-    margin-left: 0 !important;
-    padding-left: 0 !important;
-    display: inline-block !important;
 }
 
 .chat-message.daavy-chat-collapsible-formula .dice-formula {
@@ -545,4 +522,83 @@ prose-mirror.daavy-chat-hide-chat-formatting > .menu-container {
 
 .daavy-chat-buttons-hidden {
     display: none !important;
+}
+
+.chat-message.daavy-chat-mentioned {
+    outline: 2px solid #d6a400 !important;
+    outline-offset: -2px;
+}
+
+.chat-message.daavy-chat-merge-start {
+    margin-bottom: 0 !important;
+    border-bottom-width: 0 !important;
+    border-bottom-left-radius: 0 !important;
+    border-bottom-right-radius: 0 !important;
+    padding-bottom: 2px !important;
+}
+
+.chat-message.daavy-chat-merge-start .message-content {
+    padding-bottom: 0 !important;
+}
+
+.chat-message.daavy-chat-merge-start .message-content > :last-child {
+    margin-bottom: 0 !important;
+}
+
+.chat-message.daavy-chat-merge-continuation {
+    position: relative !important;
+    margin-top: 0 !important;
+    border-top-width: 0 !important;
+    border-top-left-radius: 0 !important;
+    border-top-right-radius: 0 !important;
+    padding-top: 2px !important;
+    padding-bottom: 2px !important;
+}
+
+.chat-message.daavy-chat-merge-continuation .message-header {
+    position: absolute !important;
+    top: 0;
+    right: 8px;
+    left: 8px;
+    height: 0 !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+    display: block !important;
+    overflow: visible !important;
+    pointer-events: none;
+    z-index: 1;
+}
+
+.chat-message.daavy-chat-merge-continuation .message-header .message-sender,
+.chat-message.daavy-chat-merge-continuation .message-header .flavor-text,
+.chat-message.daavy-chat-merge-continuation .message-header .whisper-to {
+    display: none !important;
+}
+
+.chat-message.daavy-chat-merge-continuation .message-metadata {
+    position: absolute !important;
+    top: 0;
+    right: 0;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 120ms ease;
+}
+
+.chat-message.daavy-chat-merge-continuation:hover .message-metadata,
+.chat-message.daavy-chat-merge-continuation:focus-within .message-metadata {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.chat-message.daavy-chat-merge-continuation .message-content {
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+}
+
+.chat-message.daavy-chat-merge-continuation .message-content > :first-child {
+    margin-top: 0 !important;
+}
+
+.chat-message.daavy-chat-merge-continuation .message-content > :last-child {
+    margin-bottom: 0 !important;
 }

@@ -1,9 +1,9 @@
 import { CHAT_SELECTORS, MESSAGE_TYPES } from "./constants.js";
 import { injectFeedbackButton } from "./feedback.js";
-import { registerModuleSettings, SettingsLayout } from "./settings.js";
+import { groupSettings, registerModuleSettings } from "./settings.js";
 import { classifyMessage, getElement, isCurrentUserAuthor } from "./utils.js";
-import { AutocompleteWhisper } from "./features/autocomplete-whisper.js";
 import {
+    AutocompleteWhisper,
     ChatPins,
     ChatClearControls,
     ChatTabsManager,
@@ -27,7 +27,7 @@ Hooks.once("ready", () => {
 });
 
 Hooks.on("renderSettingsConfig", (_application, renderedHtml) => {
-    SettingsLayout.groupSettings(renderedHtml);
+    groupSettings(renderedHtml);
     injectFeedbackButton(renderedHtml);
 });
 
