@@ -1,6 +1,6 @@
 # 💬 Daavy's Chat
 
-A simple module for **Foundry VTT** that organizes the chat log into tabs and adds small quality-of-life tools for cleaner chat messages.
+Improves the Foundry VTT chat log with tabs, message tools, and optional chat features.
 
 ---
 
@@ -8,48 +8,47 @@ A simple module for **Foundry VTT** that organizes the chat log into tabs and ad
 
 ---
 
-## 🗂️ Features
+## ✨ Features
 
-- **💬 Chat Tabs** — Splits messages into Chat, Game, and Whispers.
-- **📌 Chat Pins** — Lets GMs pin messages above the log and lets players request pins for whispers.
-- **🧹 Chat Clearing** — Clears the active tab or every tab with SHIFT.
-- **✍️ Message Input** — Adds whisper autocomplete and hides formatting controls.
-- **🎲 Cleaner Messages** — Hides clutter from messages, rolls, and initiative.
-- **🔒 Private Rolls** — Hides private rolls from unauthorized users.
-- **⚔️ PF2e Tools** — Hides traits, damage-roll details, and damage buttons.
-
----
+- **Chat tabs** — Separates Chat, Game, and Whispers.
+- **Unread indicators** — Shows unread messages on inactive tabs. Mentions use a yellow indicator.
+- **Whisper autocomplete** — Suggests users for `/w` and `/whisper` commands.
+- **User mentions** — Type `@username` to mention a user. Mentioned text uses that user's color, plays a notification sound, and highlights the message with a yellow border for one minute. Mentions are local to each user.
+- **Message merge** — Consecutive Chat and Whisper messages from the same author are displayed as a compact group. Game messages and pinned messages always remain separate.
+- **Message pins** — GMs can pin messages. Players can request pins for whispers.
+- **Chat clearing** — GMs can clear the active tab or clear all tabs with SHIFT.
+- **Private roll protection** — Hides private rolls from users who cannot see them.
 
 ## ⚙️ Settings
 
-### Settings
+### 🛠️ General
 
-- **Autocomplete Whisper** — Suggests names for `/w` and `/whisper`.
-- **Cleaner Chat** — Hides avatars and usernames.
-- **Collapsible Formula** — Hides formulas until clicked.
-- **Compact Chat** — Uses a compact layout.
-- **Hide Chat Formatting** — Hides formatting controls.
-- **Hide Chat Initiative** — Hides initiative messages.
-- **Hide Private Messages** — Hides unauthorized private rolls.
+- **Cleaner Chat** — Hides avatars and usernames in chat headers.
+- **Hide Chat Formatting** — Hides the ProseMirror formatting toolbar.
+- **Collapsible Formula** — Hides dice formulas until clicked.
+- **Hide Chat Initiative** — Prevents initiative roll messages from being created in chat.
+- **Hide Private Messages** — Hides unauthorized private rolls. This is a world setting restricted to GMs.
 
-### PF2e Only
+### 🎲 PF2e only
 
-- **Hide Damage Buttons** — Hides damage buttons with a toggle.
-- **Hide Damage Traits** — Hides damage-roll traits.
-- **Trait Filter** — Filters traits and shows up to three.
+- **Hide Damage Buttons** — Hides damage buttons by default and adds a toggle for authorized users.
+- **Hide Damage Traits** — Hides trait tags on damage rolls.
+- **Trait Filter** — Filters low-impact traits and limits visible traits to three. Click the traits to expand them.
 
-## 🛠️ Compatibility
+## 📦 Installation
 
-- **Foundry VTT**: Version 14
-- **Systems**: System-agnostic, with optional PF2e features.
+In Foundry VTT, open **Add-on Modules**, choose **Install Module**, and enter the manifest URL:
 
----
+<https://github.com/DaavyC/dchat/releases/latest/download/module.json>
+
+## ✅ Compatibility
+
+- **Foundry VTT:** Version 14
+- **Systems:** System-agnostic, with optional PF2e features
 
 ## 📚 Credits
 
 - **[Actually Private Messages](https://gitlab.com/koboldworks/agnostic/private-rolls)** by koboldworks — inspiration only.
 - **[Autocomplete Whisper](https://github.com/orcnog/autocomplete-whisper/)** by orcnog — inspiration only.
 
----
-
-> This module was built with AI-assisted development.
+> Built with AI-assisted development.
