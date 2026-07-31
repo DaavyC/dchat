@@ -81,7 +81,7 @@ export class ImageUpload {
             const file = await fileFromDataUrl(payload.src, payload.fileName, payload.fileType);
             if (!isImageFile(file)) throw new Error("Unsupported chat image format.");
 
-            response.path = await uploadImage(message, file, {notify: false});
+            response.path = await uploadImage(message, file);
             if (!response.path) throw new Error("GM upload returned no file path.");
         } catch (error) {
             response.error = error.message || "GM could not upload the chat image.";
@@ -113,7 +113,7 @@ export class ImageUpload {
             for (const [src, file] of pending) {
                 try {
                     const path = game.user?.isGM
-                        ? await uploadImage(message, file, {notify: false})
+                        ? await uploadImage(message, file)
                         : await this._requestUpload(message, src, file);
                     if (path) uploaded.set(src, path);
                 } catch (error) {
@@ -151,18 +151,15 @@ export class ImageUpload {
                 reject(new Error("The active GM did not complete the chat image upload in time."));
             }, IMAGE_UPLOAD_TIMEOUT);
 
+            const settle = callback => value => {
+                clearTimeout(timeout);
+                this._uploadRequests.delete(requestId);
+                callback(value);
+            };
             this._uploadRequests.set(requestId, {
                 gmId: gm.id,
-                resolve: path => {
-                    clearTimeout(timeout);
-                    this._uploadRequests.delete(requestId);
-                    resolve(path);
-                },
-                reject: error => {
-                    clearTimeout(timeout);
-                    this._uploadRequests.delete(requestId);
-                    reject(error);
-                }
+                resolve: settle(resolve),
+                reject: settle(reject)
             });
 
             try {
@@ -292,10 +289,8 @@ async function fileFromDataUrl(src, name, type) {
     return new File([blob], name || "dchat-image", {type: blob.type || type});
 }
 
-async function uploadImage(message, file, {notify = true} = {}) {
+async function uploadImage(message, file) {
     const upload = new File([file], `${message.id}-${file.name}`, {type: file.type});
-    if (notify) return foundry.applications.ux.TextEditor.implementation._uploadImage(message.uuid, upload);
-
     const response = await foundry.applications.apps.FilePicker.upload(
         null,
         null,

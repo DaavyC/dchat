@@ -13,48 +13,30 @@ export function groupSettings(renderedHtml) {
     if (!container) return;
 
     const documentRef = getDocument(container);
-
     for (const [groupKey, settingKeys] of Object.entries(SETTING_GROUPS)) {
-        groupSettingRows(container, documentRef, groupKey, settingKeys);
+        const rows = settingKeys.map(key => {
+            const settingId = `${MODULE_ID}.${key}`;
+            return container.querySelector(`[data-setting-id="${settingId}"]`)?.closest(".form-group")
+                ?? container.querySelector(`[id$="${settingId}"]`)?.closest(".form-group");
+        }).filter(row => row && !row.closest(`.${SETTINGS_CLASSES.GROUP}`));
+        if (!rows.length) continue;
+
+        const group = documentRef.createElement("div");
+        const title = documentRef.createElement("h3");
+        group.className = SETTINGS_CLASSES.GROUP;
+        group.setAttribute("role", "group");
+        title.id = `${MODULE_ID}-settings-group-${groupKey}`;
+        group.setAttribute("aria-labelledby", title.id);
+        title.textContent = game.i18n.localize(`${SETTINGS_GROUP_PREFIX}.${groupKey}`);
+        title.className = "daavy-chat-settings-group-title";
+        group.appendChild(title);
+        rows[0].replaceWith(group);
+
+        for (const row of rows) {
+            row.classList.add("daavy-chat-settings-row");
+            group.appendChild(row);
+        }
     }
-}
-
-function groupSettingRows(container, documentRef, groupKey, settingKeys) {
-    const rows = settingKeys
-        .map(key => findSettingRow(container, key))
-        .filter(row => row && !row.closest(`.${SETTINGS_CLASSES.GROUP}`));
-    if (!rows.length) return;
-
-    const group = createGroup(documentRef, groupKey);
-    rows[0].replaceWith(group);
-
-    for (const row of rows) {
-        row.remove();
-        row.classList.add("daavy-chat-settings-row");
-        group.appendChild(row);
-    }
-}
-
-function createGroup(documentRef, groupKey) {
-    const group = documentRef.createElement("div");
-    group.className = SETTINGS_CLASSES.GROUP;
-    group.setAttribute("role", "group");
-
-    const title = documentRef.createElement("h3");
-    title.id = `${MODULE_ID}-settings-group-${groupKey}`;
-    title.textContent = game.i18n.localize(`${SETTINGS_GROUP_PREFIX}.${groupKey}`);
-    title.className = "daavy-chat-settings-group-title";
-    group.setAttribute("aria-labelledby", title.id);
-    group.appendChild(title);
-
-    return group;
-}
-
-function findSettingRow(container, key) {
-    const settingId = `${MODULE_ID}.${key}`;
-    return container.querySelector(`[data-setting-id="${settingId}"]`)?.closest(".form-group")
-        ?? container.querySelector(`[id$="${settingId}"]`)?.closest(".form-group")
-        ?? null;
 }
 
 export function registerModuleSettings() {

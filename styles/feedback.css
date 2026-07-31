@@ -57,9 +57,7 @@ button.daavy-chat-feedback-cancel:focus-visible {
     min-height: 36px;
     color: #f3f6fa;
     background: #3f5f78;
-    border-width: 1px;
-    border-style: solid;
-    border-color: #6f8ba0;
+    border: 1px solid #6f8ba0;
     border-radius: 4px;
     cursor: pointer;
     opacity: 0.65;

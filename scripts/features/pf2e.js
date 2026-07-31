@@ -29,8 +29,7 @@ export class TraitFilter {
             if (container.dataset[PF2E_DATA.TRAITS_LIMITED]) return;
             container.dataset[PF2E_DATA.TRAITS_LIMITED] = "true";
 
-            const visibleTraitTags = Array.from(container.querySelectorAll("span.tag:is([data-trait], [data-slug]):not(.tag_transparent)"))
-                .filter(tag => !tag.classList.contains(PF2E_CLASSES.FILTERED_TRAIT));
+            const visibleTraitTags = container.querySelectorAll(`span.tag:is([data-trait], [data-slug]):not(.tag_transparent):not(.${PF2E_CLASSES.FILTERED_TRAIT})`);
 
             if (visibleTraitTags.length <= PF2E_VISIBLE_TRAIT_LIMIT) return;
 

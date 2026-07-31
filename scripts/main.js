@@ -44,11 +44,7 @@ export class HideChatInitiative {
 }
 
 export class HidePrivateMessages {
-    static _notifyPatched = false;
-
     static onReady() {
-        if (this._notifyPatched) return;
-
         const ChatLogClass = globalThis.foundry?.applications?.sidebar?.tabs?.ChatLog;
         const originalNotify = ChatLogClass?.prototype?.notify;
         if (typeof originalNotify !== "function") return;
@@ -58,7 +54,6 @@ export class HidePrivateMessages {
             return originalNotify.call(this, message, options);
         };
 
-        this._notifyPatched = true;
     }
 
     static shouldHideMessage(message) {
@@ -140,16 +135,12 @@ export class AutocompleteWhisper {
         }, true);
     }
 
-    static _pruneHosts() {
-        for (const host of Array.from(this._trackedHosts)) {
+    static refresh(element = null, elements = null) {
+        for (const host of this._trackedHosts) {
             if (host?.isConnected) continue;
             this._teardown(host);
             this._trackedHosts.delete(host);
         }
-    }
-
-    static refresh(element = null, elements = null) {
-        this._pruneHosts();
 
         for (const candidate of Object.values(elements ?? {})) this._attach(candidate);
 
@@ -169,8 +160,11 @@ export class AutocompleteWhisper {
         this._trackedHosts.add(host);
         this._bindFocusListener(getDocument(host));
 
-        const editor = resolveEditor(host);
-        const editable = resolveEditable(editor);
+        const editor = host.querySelector("prose-mirror[name='message'], prose-mirror")
+            ?? host.querySelector(AUTOCOMPLETE_WHISPER.EDITABLE_SELECTOR);
+        const editable = editor?.matches?.("[contenteditable='true']")
+            ? editor
+            : editor?.querySelector?.(AUTOCOMPLETE_WHISPER.EDITABLE_SELECTOR) ?? null;
         if (!editor || !editable) {
             this._teardown(host);
             return false;
@@ -255,7 +249,8 @@ export class AutocompleteWhisper {
         const state = this._states.get(host);
         if (state) {
             state.controller.abort();
-            clearEditableState(state.editable);
+            ["aria-activedescendant", "aria-autocomplete", "aria-haspopup", "aria-controls", "aria-expanded"]
+                .forEach(attribute => state.editable.removeAttribute(attribute));
             state.popup?.remove();
             this._states.delete(host);
         }
@@ -557,17 +552,6 @@ function resolveHost(rootElement, hostSelector) {
     return closestHost ?? rootElement.querySelector?.(hostSelector) ?? null;
 }
 
-function resolveEditor(host) {
-    return host.querySelector("prose-mirror[name='message'], prose-mirror")
-        ?? host.querySelector(AUTOCOMPLETE_WHISPER.EDITABLE_SELECTOR);
-}
-
-function resolveEditable(editor) {
-    if (!editor) return null;
-    if (editor.matches?.("[contenteditable='true']")) return editor;
-    return editor.querySelector?.(AUTOCOMPLETE_WHISPER.EDITABLE_SELECTOR) ?? null;
-}
-
 function createPopup(host) {
     const existing = host.querySelector(`.${AUTOCOMPLETE_WHISPER.POPUP_CLASS}`);
     if (existing) return existing;
@@ -587,11 +571,6 @@ function prepareEditable(editable, popupId) {
     editable.setAttribute("aria-haspopup", "listbox");
     editable.setAttribute("aria-controls", popupId);
     editable.setAttribute("aria-expanded", "false");
-}
-
-function clearEditableState(editable) {
-    ["aria-activedescendant", "aria-autocomplete", "aria-haspopup", "aria-controls", "aria-expanded"]
-        .forEach(attribute => editable.removeAttribute(attribute));
 }
 
 function renderPopup(state) {
@@ -688,12 +667,10 @@ class CollapsibleFormula {
 
 export class ChatPins {
     static pendingRequest = null;
-    static _socketActive = false;
 
     static onReady() {
-        if (this._socketActive || !game.socket?.on) return;
+        if (!game.socket?.on) return;
         game.socket.on(`module.${MODULE_ID}`, payload => this._handleSocket(payload));
-        this._socketActive = true;
     }
 
     static processMessage(message, renderedHtml) {
@@ -706,11 +683,6 @@ export class ChatPins {
         this._setPinnedState(element, pinned, mode);
         if (!mode) return;
         this._injectToggle(message, element, pinned, mode);
-    }
-
-    static refresh(element) {
-        const container = getElement(element);
-        if (container) this._refreshContainer(container);
     }
 
     static preDeleteMessage(message) {
@@ -1127,49 +1099,33 @@ export class ChatClearControls {
     static async scopedClearChatLog(clearAll = false) {
         if (!game.user?.isGM) return;
 
-        const tabLabel = this._getClearLabel(clearAll);
-        const messages = this._getMessagesToClear(clearAll);
+        const currentTab = CHAT_TAB_CONFIG.find(tab => tab.id === ChatTabsManager.activeTab);
+        const tabLabel = game.i18n.localize(clearAll
+            ? i18nKey("Tabs.All")
+            : currentTab?.label ?? i18nKey("Tabs.Chat"));
+        const messages = (clearAll
+            ? game.messages.contents
+            : game.messages.filter(message => classifyMessage(message) === ChatTabsManager.activeTab))
+            .filter(message => !isPinnedMessage(message));
 
         if (!messages.length) {
             return ui.notifications.info(game.i18n.format(i18nKey("Clear.NoMessages"), { label: tabLabel }));
         }
 
-        if (!await this._confirmClear(tabLabel, messages.length)) return;
-
-        const messageIds = messages.map(message => message.id);
-        await this._deleteInBatches(messageIds);
-
-        ui.notifications.info(game.i18n.format(i18nKey("Clear.Success"), { label: tabLabel, count: messageIds.length }));
-    }
-
-    static _getClearLabel(clearAll) {
-        if (clearAll) return game.i18n.localize(i18nKey("Tabs.All"));
-
-        const currentTab = CHAT_TAB_CONFIG.find(tab => tab.id === ChatTabsManager.activeTab);
-        return game.i18n.localize(currentTab?.label ?? i18nKey("Tabs.Chat"));
-    }
-
-    static _getMessagesToClear(clearAll) {
-        const messages = clearAll
-            ? game.messages.contents
-            : game.messages.filter(message => classifyMessage(message) === ChatTabsManager.activeTab);
-
-        return messages.filter(message => !isPinnedMessage(message));
-    }
-
-    static _confirmClear(tabLabel, messageCount) {
-        return foundry.applications.api.DialogV2.confirm({
+        const confirmed = await foundry.applications.api.DialogV2.confirm({
             window: { title: game.i18n.format(i18nKey("Clear.Title"), { label: tabLabel }) },
-            content: `<p>${game.i18n.format(i18nKey("Clear.Confirm"), { count: messageCount, label: tabLabel })}</p>`,
+            content: `<p>${game.i18n.format(i18nKey("Clear.Confirm"), { count: messages.length, label: tabLabel })}</p>`,
             yes: { default: true },
             no: { default: false },
         });
-    }
+        if (!confirmed) return;
 
-    static async _deleteInBatches(messageIds) {
+        const messageIds = messages.map(message => message.id);
         for (let batchStartIndex = 0; batchStartIndex < messageIds.length; batchStartIndex += 100) {
             await ChatMessage.deleteDocuments(messageIds.slice(batchStartIndex, batchStartIndex + 100));
         }
+
+        ui.notifications.info(game.i18n.format(i18nKey("Clear.Success"), { label: tabLabel, count: messageIds.length }));
     }
 }
 
@@ -1185,12 +1141,6 @@ export class ChatTabsManager {
         for (const element of Array.from(this._chatContainers)) {
             if (!element?.isConnected) this._chatContainers.delete(element);
         }
-    }
-
-    static _trackContainer(element) {
-        if (!element) return;
-        this._pruneContainers();
-        this._chatContainers.add(element);
     }
 
     static _getTrackedContainers() {
@@ -1211,7 +1161,7 @@ export class ChatTabsManager {
     }
 
     static _ensureModuleToolbar(element) {
-        const messageLog = this._getMessageList(element);
+        const messageLog = element.querySelector(CHAT_SELECTORS.MESSAGE_LIST);
         if (!messageLog) return null;
 
         const anchor = element.querySelector(CHAT_SELECTORS.CONTROLS)
@@ -1230,9 +1180,10 @@ export class ChatTabsManager {
 
     static inject(element) {
         if (!element) return;
-        this._trackContainer(element);
+        this._pruneContainers();
+        this._chatContainers.add(element);
 
-        const messageLog = this._getMessageList(element);
+        const messageLog = element.querySelector(CHAT_SELECTORS.MESSAGE_LIST);
         if (!messageLog) return;
 
         const toolbar = this._ensureModuleToolbar(element);
@@ -1243,8 +1194,11 @@ export class ChatTabsManager {
         }
         this._syncWhisperTarget(element);
         this._applyFilterClass(element, this.activeTab);
-        this.classifyExistingMessages(element);
-        ChatPins.refresh(element);
+        element.querySelectorAll(CHAT_SELECTORS.MESSAGE_ID).forEach(messageElement => {
+            const message = game.messages.get(messageElement.dataset.messageId);
+            if (message) messageElement.setAttribute(`data-${CHAT_DATA.TYPE}`, classifyMessage(message));
+        });
+        ChatPins._refreshContainer(element);
         MessageMerge.observe(element);
         UserMentions.activate(this.activeTab, element);
 
@@ -1266,7 +1220,7 @@ export class ChatTabsManager {
         this.activeTab = tabId;
 
         for (const container of this._getTrackedContainers()) {
-            const messageList = this._getMessageList(container);
+            const messageList = container.querySelector(CHAT_SELECTORS.MESSAGE_LIST);
             if (!messageList) continue;
 
             this._applyFilterClass(container, tabId);
@@ -1407,19 +1361,6 @@ export class ChatTabsManager {
         }
     }
 
-    static classifyExistingMessages(container) {
-        container.querySelectorAll(CHAT_SELECTORS.MESSAGE_ID).forEach(messageElement => {
-            const message = game.messages.get(messageElement.dataset.messageId);
-            if (message) {
-                messageElement.setAttribute(`data-${CHAT_DATA.TYPE}`, classifyMessage(message));
-            }
-        });
-    }
-
-    static _getMessageList(container) {
-        return container.querySelector(CHAT_SELECTORS.MESSAGE_LIST);
-    }
-
     static _getOrCreateToolbar(element) {
         const existing = element.querySelector(`:scope > .${CHAT_CLASSES.MODULE_TOOLBAR}`)
             ?? element.querySelector(`.${CHAT_CLASSES.MODULE_TOOLBAR}`);
@@ -1528,7 +1469,9 @@ class UserMentions {
     static processMessage(message, messageElement) {
         if (!message?.id || !messageElement) return;
 
-        this._trackElement(message.id, messageElement);
+        const elements = this._elements.get(message.id) ?? new Set();
+        elements.add(messageElement);
+        this._elements.set(message.id, elements);
         this.highlightMessage(messageElement);
         const mentioned = this.mentionsUser(message, game.user);
         if (!mentioned || this._expired.has(message.id)) return this._clearHighlight(messageElement);
@@ -1543,12 +1486,6 @@ class UserMentions {
             const message = game.messages.get(element.dataset.messageId);
             if (message && classifyMessage(message) === tabId) this.processMessage(message, element);
         }));
-    }
-
-    static _trackElement(messageId, element) {
-        const elements = this._elements.get(messageId) ?? new Set();
-        elements.add(element);
-        this._elements.set(messageId, elements);
     }
 
     static _schedule(message, element) {
@@ -1681,20 +1618,15 @@ class MessageMerge {
     static observe(container) {
         if (!container) return;
 
-        const messageLists = Array.from(container.querySelectorAll(CHAT_SELECTORS.MESSAGE_LIST))
-            .filter(messageList => !messageList.hidden);
-        messageLists.forEach(messageList => this._observeList(messageList));
-    }
+        for (const messageList of container.querySelectorAll(CHAT_SELECTORS.MESSAGE_LIST)) {
+            if (messageList.hidden) continue;
+            this.refresh(messageList);
+            if (this._observers.has(messageList)) continue;
 
-    static _observeList(messageList) {
-        if (!messageList) return;
-
-        this.refresh(messageList);
-        if (this._observers.has(messageList)) return;
-
-        const observer = new MutationObserver(() => this.refresh(messageList));
-        observer.observe(messageList, { childList: true, subtree: true });
-        this._observers.set(messageList, observer);
+            const observer = new MutationObserver(() => this.refresh(messageList));
+            observer.observe(messageList, { childList: true, subtree: true });
+            this._observers.set(messageList, observer);
+        }
     }
 
     static refresh(messageList) {

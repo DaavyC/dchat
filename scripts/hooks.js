@@ -84,7 +84,7 @@ Hooks.on("createChatMessage", (message) => {
     ChatTabsManager.onCreateWhisperMessage(message);
     if (isCurrentUserAuthor(message)) ChatTabsManager.switch(classifyMessage(message));
 });
-Hooks.on("updateChatMessage", (...args) => scheduleChatUiRefresh(...args));
+Hooks.on("updateChatMessage", scheduleChatUiRefresh);
 Hooks.on("preDeleteChatMessage", (message, ...args) => {
     if (ImageUpload.isProcessing(message)) {
         ui.notifications.info("Please wait for chat images to finish uploading.");

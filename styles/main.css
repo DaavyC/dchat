@@ -3,7 +3,6 @@
     border-radius: 5px;
     margin: 2px 0;
     padding: 0;
-    display: block;
 }
 
 .daavy-chat-settings-group-title {
@@ -256,10 +255,6 @@ button.daavy-chat-pin-deny:hover,
     align-items: center;
 }
 
-.daavy-chat-pin-manager-unpin-all {
-    width: auto;
-}
-
 .daavy-chat-pin-manager-list {
     display: grid;
     gap: 8px;
@@ -361,7 +356,6 @@ button.daavy-chat-pin-deny:hover,
     display: initial !important;
 }
 
-.chat-message.daavy-chat-cleaner-chat header,
 .chat-message.daavy-chat-cleaner-chat header {
     display: flex !important;
     align-items: baseline !important;

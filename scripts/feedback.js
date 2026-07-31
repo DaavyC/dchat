@@ -74,8 +74,7 @@ export function injectFeedbackButton(renderedHtml) {
     const container = getElement(renderedHtml);
     if (!container || !game.user?.isGM || container.querySelector(`.${FEEDBACK_ACTIONS_CLASS}`)) return;
 
-    const groups = container.querySelectorAll(`.${SETTINGS_CLASSES.GROUP}`);
-    const firstGroup = groups[0];
+    const firstGroup = container.querySelector(`.${SETTINGS_CLASSES.GROUP}`);
     if (!firstGroup) return;
 
     const documentRef = getDocument(container);
