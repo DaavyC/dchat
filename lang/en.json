@@ -25,6 +25,10 @@
         "Name": "Hide Private Messages",
         "Hint": "Hide private rolls from users who should not see them."
       },
+      "AllowPlayerMedia": {
+        "Name": "Allow Player Media Uploads",
+        "Hint": "Allow players to send images and GIFs in chat."
+      },
       "hideDamageTraits": {
         "Name": "Hide Damage Traits",
         "Hint": "Hide trait tags on damage rolls."

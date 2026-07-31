@@ -529,6 +529,10 @@ prose-mirror.daavy-chat-hide-chat-formatting > .menu-container {
     outline-offset: -2px;
 }
 
+.chat-message .message-content .daavy-chat-image-popout {
+    cursor: zoom-in;
+}
+
 .chat-message.daavy-chat-merge-start {
     margin-bottom: 0 !important;
     border-bottom-width: 0 !important;

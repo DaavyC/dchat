@@ -1,6 +1,7 @@
 import { CHAT_SELECTORS, MESSAGE_TYPES } from "./constants.js";
 import { injectFeedbackButton } from "./feedback.js";
 import { groupSettings, registerModuleSettings } from "./settings.js";
+import { ImageUpload } from "./features/media.js";
 import { classifyMessage, getElement, isCurrentUserAuthor } from "./utils.js";
 import {
     AutocompleteWhisper,
@@ -18,10 +19,12 @@ import {
 Hooks.once("init", () => {
     registerModuleSettings();
     AutocompleteWhisper.init();
+    ImageUpload.init();
 });
 
 Hooks.once("ready", () => {
     ChatPins.onReady();
+    ImageUpload.onReady();
     HidePrivateMessages.onReady();
     ChatTabsManager.initializeWhisperTarget();
 });
@@ -71,14 +74,24 @@ const refreshDetachedChat = () => {
 Hooks.on("openDetachedWindow", refreshDetachedChat);
 Hooks.on("closeDetachedWindow", refreshDetachedChat);
 
-Hooks.on("renderChatMessageHTML", (...args) => processFeatures(...args));
+Hooks.on("renderChatMessageHTML", (message, renderedHtml) => {
+    ImageUpload.processMessage(message, renderedHtml);
+    processFeatures(message, renderedHtml);
+});
 Hooks.on("createChatMessage", (message) => {
+    void ImageUpload.onCreateMessage(message);
     addChatNotification(message);
     ChatTabsManager.onCreateWhisperMessage(message);
     if (isCurrentUserAuthor(message)) ChatTabsManager.switch(classifyMessage(message));
 });
 Hooks.on("updateChatMessage", (...args) => scheduleChatUiRefresh(...args));
-Hooks.on("preDeleteChatMessage", (...args) => ChatPins.preDeleteMessage(...args));
+Hooks.on("preDeleteChatMessage", (message, ...args) => {
+    if (ImageUpload.isProcessing(message)) {
+        ui.notifications.info("Please wait for chat images to finish uploading.");
+        return false;
+    }
+    return ChatPins.preDeleteMessage(message, ...args);
+});
 Hooks.on("chatInput", (...args) => ChatTabsManager.onWhisperChatInput(...args));
 Hooks.on("chatMessage", (...args) => ChatTabsManager.onWhisperChatMessage(...args));
 

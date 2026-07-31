@@ -1,4 +1,13 @@
 ##### 1.7.0
+- Added support for sending media in chat.
+  - Supported file formats are `PNG`, `JPG/JPEG`, `WEBP`, and `GIF`.
+    - All formats except `GIF` are compressed to `WEBP` to reduce file size.
+    - Uploaded media is stored in `\worlds\world_name\assets\messages`.
+  - Media uploaded through the module is permanently deleted when its chat message is deleted.
+  - Players do not need the `Upload Files` permission to send media in chat.
+    - Player media uploads can be disabled in the module settings.
+    - A GM must be logged into the game for players to send media because the GM acts as a relay.
+  - Media can be sent through chat using drag-and-drop or copy-and-paste.
 - Added support for mentioning users with `@username`.
   - Mentioned users receive a sound notification, and the tab ping turns yellow.
   - The message remains highlighted for one minute after the user opens the tab.

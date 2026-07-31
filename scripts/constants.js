@@ -39,6 +39,14 @@ export const SETTINGS = {
         scope: "world",
         restricted: true
     },
+    ALLOW_PLAYER_MEDIA: {
+        key: "allowPlayerMedia",
+        name: "daavy-chat.Settings.AllowPlayerMedia.Name",
+        hint: "daavy-chat.Settings.AllowPlayerMedia.Hint",
+        scope: "world",
+        restricted: true,
+        default: true
+    },
     HIDE_DAMAGE_TRAITS: {
         key: "hideDamageTraits",
         name: "daavy-chat.Settings.hideDamageTraits.Name",
@@ -62,7 +70,8 @@ export const SETTING_GROUPS = {
         SETTINGS.COLLAPSIBLE_FORMULA.key,
         SETTINGS.HIDE_CHAT_FORMATTING.key,
         SETTINGS.HIDE_CHAT_INITIATIVE.key,
-        SETTINGS.HIDE_PRIVATE_MESSAGES.key
+        SETTINGS.HIDE_PRIVATE_MESSAGES.key,
+        SETTINGS.ALLOW_PLAYER_MEDIA.key
     ],
     PF2eOnly: [
         SETTINGS.HIDE_DAMAGE_BUTTONS.key,
