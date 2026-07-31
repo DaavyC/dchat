@@ -11,11 +11,12 @@ Improves the Foundry VTT chat log with tabs, message tools, and optional chat fe
 ## ✨ Features
 
 - **Chat tabs** — Separates Chat, Game, and Whispers.
+- **Autocomplete** — Suggests users when typing `/w`, `/whisper`, or `@username`.
+- **Message pins** — GMs can pin messages. Players can request pins for whispers.
 - **Unread indicators** — Shows unread messages on inactive tabs. Mentions use a yellow indicator.
-- **Whisper autocomplete** — Suggests users for `/w` and `/whisper` commands.
 - **User mentions** — Type `@username` to mention a user. Mentioned text uses that user's color, plays a notification sound, and highlights the message with a yellow border for one minute. Mentions are local to each user.
 - **Message merge** — Consecutive Chat and Whisper messages from the same author are displayed as a compact group. Game messages and pinned messages always remain separate.
-- **Message pins** — GMs can pin messages. Players can request pins for whispers.
+- **Images in chat** — Paste or drag and drop images into chat. Supported formats are `PNG`, `JPG/JPEG`, `WEBP`, and `GIF`.
 - **Chat clearing** — GMs can clear the active tab or clear all tabs with SHIFT.
 - **Private roll protection** — Hides private rolls from users who cannot see them.
 
@@ -27,7 +28,8 @@ Improves the Foundry VTT chat log with tabs, message tools, and optional chat fe
 - **Hide Chat Formatting** — Hides the ProseMirror formatting toolbar.
 - **Collapsible Formula** — Hides dice formulas until clicked.
 - **Hide Chat Initiative** — Prevents initiative roll messages from being created in chat.
-- **Hide Private Messages** — Hides unauthorized private rolls. This is a world setting restricted to GMs.
+- **Hide Private Messages** — Hides unauthorized private rolls.
+- **Allow Player Media Uploads** — Allow or block player image uploads.
 
 ### 🎲 PF2e only
 
