@@ -13,11 +13,9 @@ Improves the Foundry VTT chat log with tabs, message tools, and optional chat fe
 - **Chat tabs** — Separates Chat, Game, and Whispers.
 - **Autocomplete** — Suggests users when typing `/w`, `/whisper`, or `@username`.
 - **Message pins** — GMs can pin messages. Players can request pins for whispers.
-- **Unread indicators** — Shows unread messages on inactive tabs. Mentions use a yellow indicator.
 - **User mentions** — Type `@username` to mention a user. Mentioned text uses that user's color, plays a notification sound, and highlights the message with a yellow border for one minute. Mentions are local to each user.
 - **Message merge** — Consecutive Chat and Whisper messages from the same author are displayed as a compact group. Game messages and pinned messages always remain separate.
 - **Images in chat** — Paste or drag and drop images into chat. Supported formats are `PNG`, `JPG/JPEG`, `WEBP`, and `GIF`.
-- **Chat clearing** — GMs can clear the active tab or clear all tabs with SHIFT.
 - **Private roll protection** — Hides private rolls from users who cannot see them.
 
 ## ⚙️ Settings

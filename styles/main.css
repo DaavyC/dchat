@@ -328,6 +328,10 @@ button.daavy-chat-pin-deny:hover,
     pointer-events: none;
 }
 
+.daavy-chat-mention-jump {
+    color: #d6a400 !important;
+}
+
 @keyframes daavy-chat-pip-pulse {
     0%, 100% { transform: scale(1); opacity: 1; }
     50% { transform: scale(1.3); opacity: 0.7; }

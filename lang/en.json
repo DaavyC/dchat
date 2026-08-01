@@ -52,6 +52,9 @@
       "To": "To:",
       "NoRecipient": "No received whisper is available to reply to."
     },
+    "Mentions": {
+      "Next": "Jump to Next Mention"
+    },
     "Clear": {
       "NoMessages": "{label}: No messages to clear.",
       "Title": "Clear {label}",

@@ -1,3 +1,10 @@
+##### 1.7.1
+- Switching tabs now scrolls to the most recent message.
+  - If there are unread mentions, the tab scrolls to the oldest one instead.
+- Added a `Jump to Next Mention` button to make unread mentions easier to find.
+  - This button temporarily replaces `Jump to Bottom` until all mentions have been viewed.
+  - Using `Jump to Next Mention` removes the highlight from the previous mention.
+
 ##### 1.7.0
 - Added support for sending media in chat.
   - Supported file formats are `PNG`, `JPG/JPEG`, `WEBP`, and `GIF`.

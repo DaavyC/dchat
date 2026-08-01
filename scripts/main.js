@@ -1132,6 +1132,7 @@ export class ChatClearControls {
 
 export class ChatTabsManager {
     static _chatContainers = new Set();
+    static _mentionJumpButtons = new WeakSet();
     static activeTab = MESSAGE_TYPES.CHAT;
     static unreadTabs = new Set();
     static mentionTabs = new Set();
@@ -1201,6 +1202,9 @@ export class ChatTabsManager {
         ChatPins._refreshContainer(element);
         MessageMerge.observe(element);
         UserMentions.activate(this.activeTab, element);
+        const target = UserMentions._initializeNavigation(element, this.activeTab);
+        if (target) requestAnimationFrame(() => UserMentions.scrollTo(target));
+        this._syncMentionJumpButtons(element);
 
         ChatClearControls.injectClearButton(element);
     }
@@ -1214,22 +1218,30 @@ export class ChatTabsManager {
                     .forEach(button => button.querySelector(CHAT_SELECTORS.PIP)?.remove());
             }
             UserMentions.activate(tabId);
+            this._syncMentionJumpButtons();
             return;
         }
 
         this.activeTab = tabId;
 
-        for (const container of this._getTrackedContainers()) {
-            const messageList = container.querySelector(CHAT_SELECTORS.MESSAGE_LIST);
-            if (!messageList) continue;
-
+        const containers = this._getTrackedContainers();
+        for (const container of containers) {
             this._applyFilterClass(container, tabId);
             this._syncTabButtons(container, tabId);
-            requestAnimationFrame(() => {
-                messageList.scrollTop = messageList.scrollHeight;
-            });
         }
         UserMentions.activate(tabId);
+
+        for (const container of containers) {
+            const target = UserMentions.resetNavigation(container, tabId);
+            const scrollContainer = this._getScrollContainer(container);
+            if (!scrollContainer) continue;
+
+            requestAnimationFrame(() => {
+                if (target) UserMentions.scrollTo(target);
+                else scrollContainer.scrollTop = scrollContainer.scrollHeight;
+                this._syncMentionJumpButtons(container);
+            });
+        }
     }
 
     static setWhisperTarget(userIds = []) {
@@ -1410,6 +1422,11 @@ export class ChatTabsManager {
         this._syncWhisperTarget(container);
     }
 
+    static _getScrollContainer(container) {
+        const messageList = container.querySelector(CHAT_SELECTORS.MESSAGE_LIST);
+        return messageList?.closest(CHAT_SELECTORS.SCROLL_CONTAINER) ?? messageList;
+    }
+
     static _syncWhisperTarget(container) {
         const tabBar = container.querySelector(CHAT_SELECTORS.TAB_BAR);
         const button = tabBar?.querySelector(`[data-daavy-chat-tab="${MESSAGE_TYPES.WHISPER}"]`);
@@ -1458,6 +1475,48 @@ export class ChatTabsManager {
         if (!pip.parentElement) button.appendChild(pip);
     }
 
+    static _syncMentionJumpButtons(container = null) {
+        for (const root of container ? [container] : this._getTrackedContainers()) {
+            const button = root.querySelector(CHAT_SELECTORS.JUMP_BUTTON);
+            if (!button) continue;
+
+            if (!this._mentionJumpButtons.has(button)) {
+                this._mentionJumpButtons.add(button);
+                button.addEventListener("click", event => {
+                    if (!button.classList.contains(CHAT_CLASSES.MENTION_JUMP)) return;
+
+                    event.preventDefault();
+                    event.stopPropagation();
+                    const target = UserMentions.nextMention(root, this.activeTab, true);
+                    UserMentions.scrollTo(target);
+                    this._syncMentionJumpButtons(root);
+                });
+            }
+
+            const scrollContainer = this._getScrollContainer(root);
+
+            if (UserMentions.nextMention(root, this.activeTab)) {
+                const label = game.i18n.localize(i18nKey("Mentions.Next"));
+                button.classList.add(CHAT_CLASSES.MENTION_JUMP);
+                button.removeAttribute("data-action");
+                button.setAttribute("aria-label", label);
+                button.setAttribute("data-tooltip", label);
+                button.hidden = false;
+                continue;
+            }
+
+            button.classList.remove(CHAT_CLASSES.MENTION_JUMP);
+            button.setAttribute("data-action", "jumpToBottom");
+            button.setAttribute("aria-label", game.i18n.localize("CHAT.JumpToBottom"));
+            button.setAttribute("data-tooltip", "");
+
+            if (scrollContainer) {
+                button.hidden = scrollContainer.scrollTop + scrollContainer.clientHeight
+                    >= scrollContainer.scrollHeight - 1;
+            }
+        }
+    }
+
 }
 
 class UserMentions {
@@ -1465,6 +1524,56 @@ class UserMentions {
     static _timers = new WeakMap();
     static _expiresAt = new Map();
     static _expired = new Set();
+    static _navigation = new WeakMap();
+
+    static _getMentionedElements(container, tabId) {
+        return Array.from(container.querySelectorAll(
+            `${CHAT_SELECTORS.MESSAGE_ID}.${CHAT_CLASSES.MENTIONED}[data-${CHAT_DATA.TYPE}="${tabId}"]`
+        )).sort((first, second) => {
+            const firstMessage = game.messages.get(first.dataset.messageId);
+            const secondMessage = game.messages.get(second.dataset.messageId);
+            return Number(firstMessage?.timestamp ?? firstMessage?._source?.timestamp ?? 0)
+                - Number(secondMessage?.timestamp ?? secondMessage?._source?.timestamp ?? 0);
+        });
+    }
+
+    static _getNavigation(container, tabId, reset = false) {
+        const elements = this._getMentionedElements(container, tabId);
+        const previous = this._navigation.get(container);
+        const current = reset || previous?.tabId !== tabId
+            ? elements[0]
+            : elements.find(element => element === previous.current) ?? elements[0];
+        const state = { tabId, elements, current };
+        this._navigation.set(container, state);
+        return state;
+    }
+
+    static resetNavigation(container, tabId) {
+        return this._getNavigation(container, tabId, true).current;
+    }
+
+    static _initializeNavigation(container, tabId) {
+        if (this._navigation.has(container)) return null;
+        return this.resetNavigation(container, tabId);
+    }
+
+    static nextMention(container, tabId, advance = false) {
+        const state = this._getNavigation(container, tabId);
+        const currentIndex = state.elements.indexOf(state.current);
+        if (currentIndex < 0) return null;
+
+        const next = state.elements[currentIndex + 1];
+        if (!next) return null;
+        if (advance) {
+            state.current = next;
+            this._expire(state.elements[currentIndex].dataset.messageId);
+        }
+        return next;
+    }
+
+    static scrollTo(messageElement) {
+        messageElement?.scrollIntoView?.({ block: "center" });
+    }
 
     static processMessage(message, messageElement) {
         if (!message?.id || !messageElement) return;
@@ -1511,6 +1620,7 @@ class UserMentions {
             this._clearHighlight(element);
         }
         this._elements.delete(messageId);
+        ChatTabsManager._syncMentionJumpButtons();
     }
 
     static _applyHighlight(messageElement) {
@@ -1711,4 +1821,5 @@ export function addChatNotification(message) {
     const isMention = message?.author?.id !== game.user?.id && UserMentions.mentionsUser(message, game.user);
     ChatTabsManager.addNotification(classifyMessage(message), isMention);
     UserMentions.notify(message);
+    requestAnimationFrame(() => ChatTabsManager._syncMentionJumpButtons());
 }
