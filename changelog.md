@@ -1,3 +1,7 @@
+##### 1.7.2
+- Fixed an issue where all users received a visual notification whenever a Whisper was sent.
+- Fixed an issue where message merging in the Whisper tab combined messages sent to different recipients.
+
 ##### 1.7.1
 - Switching tabs now scrolls to the most recent message.
   - If there are unread mentions, the tab scrolls to the oldest one instead.

@@ -20,6 +20,7 @@ import {
     getDocument,
     getElement,
     i18nKey,
+    isIncomingWhisper,
     isCurrentUserAuthor,
     isPinnedMessage
 } from "./utils.js";
@@ -50,6 +51,7 @@ export class HidePrivateMessages {
         if (typeof originalNotify !== "function") return;
 
         ChatLogClass.prototype.notify = function (message, options) {
+            if (message?.whisper?.length && !isIncomingWhisper(message)) return;
             if (isSettingEnabled(SETTINGS.HIDE_PRIVATE_MESSAGES.key) && HidePrivateMessages.shouldHideMessage(message)) return;
             return originalNotify.call(this, message, options);
         };
@@ -1755,12 +1757,14 @@ class MessageMerge {
             const authorId = message?.author?.id;
             const mergeable = this._isMergeable(message) && authorId;
 
-            if (mergeable && previous?.authorId === authorId) {
+            if (mergeable
+                && previous?.authorId === authorId
+                && this._sameWhisperTargets(previous.message, message)) {
                 previous.element.classList.add(CHAT_CLASSES.MERGE_START);
                 element.classList.add(CHAT_CLASSES.MERGE_CONTINUATION);
             }
 
-            previous = mergeable ? { element, authorId } : null;
+            previous = mergeable ? { element, authorId, message } : null;
         }
     }
 
@@ -1768,6 +1772,16 @@ class MessageMerge {
         const type = classifyMessage(message);
         return !isPinnedMessage(message)
             && (type === MESSAGE_TYPES.CHAT || type === MESSAGE_TYPES.WHISPER);
+    }
+
+    static _sameWhisperTargets(firstMessage, secondMessage) {
+        if (classifyMessage(firstMessage) !== MESSAGE_TYPES.WHISPER
+            || classifyMessage(secondMessage) !== MESSAGE_TYPES.WHISPER) return true;
+
+        const firstTargets = new Set(firstMessage.whisper ?? []);
+        const secondTargets = new Set(secondMessage.whisper ?? []);
+        return firstTargets.size === secondTargets.size
+            && [...firstTargets].every(userId => secondTargets.has(userId));
     }
 }
 
@@ -1817,6 +1831,7 @@ export function scheduleChatUiRefresh() {
 }
 
 export function addChatNotification(message) {
+    if (message?.whisper?.length && !isIncomingWhisper(message)) return;
     if (isSettingEnabled(SETTINGS.HIDE_PRIVATE_MESSAGES.key) && HidePrivateMessages.shouldHideMessage(message)) return;
     const isMention = message?.author?.id !== game.user?.id && UserMentions.mentionsUser(message, game.user);
     ChatTabsManager.addNotification(classifyMessage(message), isMention);

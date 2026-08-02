@@ -46,3 +46,9 @@ export function getDocument(element = null) {
 export function isCurrentUserAuthor(message) {
     return message?.author?.id === game.user?.id;
 }
+
+export function isIncomingWhisper(message, userId = game.user?.id) {
+    return message?.whisper?.length > 0
+        && message.author?.id !== userId
+        && message.whisper.includes(userId);
+}
