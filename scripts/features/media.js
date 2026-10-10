@@ -1,4 +1,4 @@
-import { MODULE_ID, SETTINGS } from "../constants.js";
+import { MODULE_ID, PROSE_MIRROR_SELECTOR, SETTINGS } from "../constants.js";
 import { isSettingEnabled } from "../settings.js";
 import { getElement, isCurrentUserAuthor } from "../utils.js";
 
@@ -99,45 +99,49 @@ export class ImageUpload {
         if (!template) return;
 
         template.innerHTML = message.content ?? "";
+        const pending = this._getPendingImages(template);
+        if (!pending.size) return;
+
+        this._processingMessages.add(message.id);
+        try {
+            const uploaded = await this._uploadPendingImages(message, pending);
+            template.innerHTML = message.content ?? "";
+            replacePendingImages(template, pending, uploaded);
+
+            const content = template.innerHTML;
+            if (content !== message.content) await message.update({content});
+        } catch (error) {
+            console.error("dchat | Unable to finish mediated chat image upload.", error);
+            ui.notifications.error("Unable to save chat images. Try again.");
+        } finally {
+            pending.keys().forEach(src => this._pendingFiles.delete(src));
+            this._processingMessages.delete(message.id);
+        }
+    }
+
+    static _getPendingImages(template) {
         const pending = new Map();
         for (const image of template.content.querySelectorAll("img[src]")) {
             const src = image.getAttribute("src");
             const file = this._pendingFiles.get(src);
             if (file) pending.set(src, file);
         }
-        if (!pending.size) return;
+        return pending;
+    }
 
-        this._processingMessages.add(message.id);
-        try {
-            const uploaded = new Map();
-            for (const [src, file] of pending) {
-                try {
-                    const path = game.user?.isGM
-                        ? await uploadImage(message, file)
-                        : await this._requestUpload(message, src, file);
-                    if (path) uploaded.set(src, path);
-                } catch (error) {
-                    this._notifyUploadError(error);
-                }
+    static async _uploadPendingImages(message, pending) {
+        const uploaded = new Map();
+        for (const [src, file] of pending) {
+            try {
+                const path = game.user?.isGM
+                    ? await uploadImage(message, file)
+                    : await this._requestUpload(message, src, file);
+                if (path) uploaded.set(src, path);
+            } catch (error) {
+                this._notifyUploadError(error);
             }
-
-            for (const image of template.content.querySelectorAll("img[src]")) {
-                const src = image.getAttribute("src");
-                if (!pending.has(src)) continue;
-
-                const path = uploaded.get(src);
-                if (path) image.setAttribute("src", path);
-                else image.remove();
-            }
-
-            const content = template.innerHTML;
-            if (content !== message.content) await message.update({content});
-        } catch (error) {
-            console.error("dchat | Unable to finish mediated chat image upload.", error);
-        } finally {
-            pending.keys().forEach(src => this._pendingFiles.delete(src));
-            this._processingMessages.delete(message.id);
         }
+        return uploaded;
     }
 
     static async _requestUpload(message, src, file) {
@@ -184,7 +188,7 @@ export class ImageUpload {
             plugins.dchatImageUpload = new foundry.prosemirror.Plugin({
                 props: {
                     handlePaste: (view, event) => {
-                        const files = getImageFiles(event.clipboardData);
+                        const files = getChatImageFiles(view, event.clipboardData);
                         if (!files.length) return;
 
                         this._uploadFiles(view, files);
@@ -193,7 +197,7 @@ export class ImageUpload {
                     handleDrop: (view, event, _slice, moved) => {
                         if (moved) return;
 
-                        const files = getImageFiles(event.dataTransfer);
+                        const files = getChatImageFiles(view, event.dataTransfer);
                         if (!files.length) return;
 
                         const position = view.posAtCoords({
@@ -226,13 +230,11 @@ export class ImageUpload {
                 this._pendingFiles.set(src, compressed);
 
                 const image = view.state.schema.nodes.image.create({src});
-                if (insertPosition === undefined) {
-                    insertPosition = view.state.selection.from;
-                    view.dispatch(view.state.tr.replaceSelectionWith(image));
-                } else {
-                    view.dispatch(view.state.tr.insert(insertPosition, image));
-                }
-                insertPosition += 2;
+                const transaction = insertPosition === undefined
+                    ? view.state.tr.replaceSelectionWith(image)
+                    : view.state.tr.insert(insertPosition, image);
+                insertPosition = transaction.mapping.map(insertPosition ?? view.state.selection.from);
+                view.dispatch(transaction);
             } catch (error) {
                 this._notifyUploadError(error);
             }
@@ -245,7 +247,19 @@ export class ImageUpload {
     }
 }
 
-function getImageFiles(dataTransfer) {
+function replacePendingImages(template, pending, uploaded) {
+    for (const image of template.content.querySelectorAll("img[src]")) {
+        const src = image.getAttribute("src");
+        if (!pending.has(src)) continue;
+
+        const path = uploaded.get(src);
+        if (path) image.setAttribute("src", path);
+        else image.remove();
+    }
+}
+
+function getChatImageFiles(view, dataTransfer) {
+    if (!view.dom.closest(PROSE_MIRROR_SELECTOR)) return [];
     const source = dataTransfer?.files?.length ? dataTransfer.files : dataTransfer?.items ?? [];
     return Array.from(source, item => item.kind === undefined ? item : item.getAsFile?.())
         .filter(Boolean)
@@ -298,7 +312,8 @@ async function uploadImage(message, file) {
         {uuid: message.uuid},
         {notify: false}
     );
-    return response?.path;
+    if (!response?.path) throw new Error("Chat image upload returned no file path.");
+    return response.path;
 }
 
 function readAsDataUrl(blob) {

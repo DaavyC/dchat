@@ -1,6 +1,6 @@
-# 💬 Daavy's Chat
+# Daavy's Chat
 
-Improves the Foundry VTT chat log with tabs, message tools, and optional chat features.
+Adds tabs and message tools to the Foundry VTT chat log.
 
 ---
 
@@ -8,47 +8,49 @@ Improves the Foundry VTT chat log with tabs, message tools, and optional chat fe
 
 ---
 
-## ✨ Features
+## Features
 
-- **Chat tabs** — Separates Chat, Game, and Whispers.
-- **Autocomplete** — Suggests users when typing `/w`, `/whisper`, or `@username`.
-- **Message pins** — GMs can pin messages. Players can request pins for whispers.
-- **User mentions** — Type `@username` to mention a user. Mentioned text uses that user's color, plays a notification sound, and highlights the message with a yellow border for one minute. Mentions are local to each user.
-- **Message merge** — Consecutive Chat and Whisper messages from the same author are displayed as a compact group. Game messages and pinned messages always remain separate.
-- **Images in chat** — Paste or drag and drop images into chat. Supported formats are `PNG`, `JPG/JPEG`, `WEBP`, and `GIF`.
-- **Private roll protection** — Hides private rolls from users who cannot see them.
+- Tabs separate Chat, Game, and Whispers.
+- Autocomplete suggests users when you type `/w`, `/whisper`, or `@username`.
+- GMs can pin messages. Players can request pins for whispers.
+- Type `@username` to mention a user. The text uses that user's color. The mentioned user hears a notification sound and sees a yellow border around the message for one minute after opening its tab. Each user sees their own mention alerts.
+- Consecutive messages from the same author appear in a compact group within Chat or Whispers. Game messages and pinned messages remain separate.
+- Paste or drag and drop images into chat. Supported formats are PNG, JPG/JPEG, WEBP, and GIF.
+- Private roll protection hides rolls from users who cannot see their content.
 
-## ⚙️ Settings
+## Settings
 
-### 🛠️ General
+### General
 
-- **Cleaner Chat** — Hides avatars and usernames in chat headers.
-- **Hide Chat Formatting** — Hides the ProseMirror formatting toolbar.
-- **Collapsible Formula** — Hides dice formulas until clicked.
-- **Hide Chat Initiative** — Prevents initiative roll messages from being created in chat.
-- **Hide Private Messages** — Hides unauthorized private rolls.
-- **Allow Player Media Uploads** — Allow or block player image uploads.
+| Setting | Effect |
+| --- | --- |
+| Cleaner chat | Hides avatars and usernames in chat headers. |
+| Hide formatting toolbar | Hides the ProseMirror formatting toolbar. |
+| Collapsible formula | Hides dice formulas until you click them. |
+| Hide initiative messages | Prevents initiative rolls from creating chat messages. |
+| Hide private rolls | Hides private rolls from users who cannot see their content. |
+| Allow player media uploads | Allows or blocks player image uploads. |
 
-### 🎲 PF2e only
+### PF2e only
 
-- **Hide Damage Buttons** — Hides damage buttons by default and adds a toggle for authorized users.
-- **Hide Damage Traits** — Hides trait tags on damage rolls.
-- **Trait Filter** — Filters low-impact traits and limits visible traits to three. Click the traits to expand them.
+| Setting | Effect |
+| --- | --- |
+| Hide damage buttons | Hides damage buttons by default and adds a toggle for users who can use them. |
+| Hide damage traits | Hides trait tags on damage rolls. |
+| Trait filter | Hides low-impact traits and shows up to three traits. Click the traits to expand them. |
 
-## 📦 Installation
+## Installation
 
-In Foundry VTT, open **Add-on Modules**, choose **Install Module**, and enter the manifest URL:
+In Foundry VTT, open Add-on Modules, choose Install Module, and enter the manifest URL:
 
 <https://github.com/DaavyC/dchat/releases/latest/download/module.json>
 
-## ✅ Compatibility
+## Compatibility
 
-- **Foundry VTT:** Version 14
-- **Systems:** System-agnostic, with optional PF2e features
+- Requires Foundry VTT 14.
+- Works with any game system. Some settings are specific to PF2e.
 
-## 📚 Credits
+## Credits
 
-- **[Actually Private Messages](https://gitlab.com/koboldworks/agnostic/private-rolls)** by koboldworks — inspiration only.
-- **[Autocomplete Whisper](https://github.com/orcnog/autocomplete-whisper/)** by orcnog — inspiration only.
-
-> Built with AI-assisted development.
+- [Actually Private Messages](https://gitlab.com/koboldworks/agnostic/private-rolls) by koboldworks — feature inspiration.
+- [Autocomplete Whisper](https://github.com/orcnog/autocomplete-whisper/) by orcnog — feature inspiration.

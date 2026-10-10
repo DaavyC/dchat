@@ -3,42 +3,42 @@
     "Settings": {
       "Groups": {
         "Settings": "Settings",
-        "PF2eOnly": "PF2e Only"
+        "PF2eOnly": "PF2e only"
       },
       "cleanerChat": {
-        "Name": "Cleaner Chat",
+        "Name": "Cleaner chat",
         "Hint": "Hide avatars and usernames in chat headers."
       },
       "HideChatFormatting": {
-        "Name": "Hide Chat Formatting",
-        "Hint": "Hide the ProseMirror formatting toolbar in chat."
+        "Name": "Hide formatting toolbar",
+        "Hint": "Hide the formatting toolbar in chat."
       },
       "CollapsibleFormula": {
-        "Name": "Collapsible Formula",
+        "Name": "Collapsible formula",
         "Hint": "Hide dice formulas until clicked."
       },
       "hideChatInitiative": {
-        "Name": "Hide Chat Initiative",
+        "Name": "Hide initiative messages",
         "Hint": "Prevent initiative roll messages from being created in chat."
       },
       "HidePrivateMessages": {
-        "Name": "Hide Private Messages",
-        "Hint": "Hide private rolls from users who should not see them."
+        "Name": "Hide private rolls",
+        "Hint": "Hide private rolls from users who cannot see their content."
       },
       "AllowPlayerMedia": {
-        "Name": "Allow Player Media Uploads",
+        "Name": "Allow player media uploads",
         "Hint": "Allow players to send images and GIFs in chat."
       },
       "hideDamageTraits": {
-        "Name": "Hide Damage Traits",
+        "Name": "Hide damage traits",
         "Hint": "Hide trait tags on damage rolls."
       },
       "traitFilter": {
-        "Name": "Trait Filter",
+        "Name": "Trait filter",
         "Hint": "Hide low-impact traits and limit visible chat traits to 3. Click to expand."
       },
       "HideDamageButtons": {
-        "Name": "Hide Damage Buttons",
+        "Name": "Hide damage buttons",
         "Hint": "Hide damage buttons by default."
       }
     },
@@ -46,31 +46,31 @@
       "Chat": "Chat",
       "Game": "Game",
       "Whispers": "Whispers",
-      "All": "All Tabs"
+      "All": "All tabs"
     },
     "Whisper": {
       "To": "To:",
-      "NoRecipient": "No received whisper is available to reply to."
+      "NoRecipient": "No whisper is available to reply to."
     },
     "Mentions": {
-      "Next": "Jump to Next Mention"
+      "Next": "Jump to next mention"
     },
     "Clear": {
-      "NoMessages": "{label}: No messages to clear.",
+      "NoMessages": "No messages to clear in {label}.",
       "Title": "Clear {label}",
-      "Confirm": "Delete <strong>{count}</strong> message(s) from <strong>{label}</strong>?",
-      "Success": "{label}: {count} message(s) cleared.",
-      "Tooltip": "Clear active tab (SHIFT all)"
+      "Confirm": "Delete the messages in <strong>{label}</strong>? Total: <strong>{count}</strong>.",
+      "Success": "Deleted messages from {label}. Total: {count}.",
+      "Tooltip": "Clear the active tab. Hold Shift to clear all tabs."
     },
     "Pin": {
       "Pin": "Pin message",
       "Unpin": "Unpin message",
-      "Manager": "Pin Manager",
+      "Manager": "Pin manager",
       "ManagerEmpty": "No pinned messages.",
       "ManagerUnpinAll": "Unpin all",
       "DeletePinned": "Pinned messages cannot be deleted.",
-      "Request": "Request pin",
-      "RequestTitle": "Pin Request",
+      "Request": "Request a pin",
+      "RequestTitle": "Pin request",
       "Requester": "Requested by:",
       "Accept": "Accept",
       "Deny": "Deny",
@@ -78,7 +78,8 @@
       "NoGm": "No active GM is available for pin requests.",
       "Sent": "Pin request sent.",
       "Approved": "Pin request approved.",
-      "Denied": "Pin request denied."
+      "Denied": "Pin request denied.",
+      "Error": "Unable to pin the message. Try again."
     },
     "HideDamageButtons": {
       "Show": "Show damage buttons",
@@ -86,7 +87,7 @@
       "ToggleLabel": "Toggle damage buttons"
     },
     "Feedback": {
-      "MenuLabel": "Send Feedback",
+      "MenuLabel": "Send feedback",
       "MenuHint": "Send anonymous feedback about Daavy's Chat.",
       "Category": "Category",
       "Categories": {
@@ -94,12 +95,12 @@
         "Suggestion": "Suggestion"
       },
       "Message": "Message",
-      "MessageHint": "Describe your feedback without including personal or private information.",
+      "MessageHint": "Describe the bug or suggestion. Leave out personal or private information.",
       "Cancel": "Cancel",
-      "Send": "Send Feedback",
+      "Send": "Send feedback",
       "Invalid": "Choose a category and enter a message of up to 3,000 characters.",
-      "Success": "Feedback sent. Thank you!",
-      "Error": "Unable to send feedback. Please try again later."
+      "Success": "Feedback sent.",
+      "Error": "Unable to send feedback. Try again later."
     },
     "Donate": {
       "Label": "Donate"

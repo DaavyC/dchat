@@ -1,8 +1,20 @@
+##### 1.7.3
+
+- Pin requests now go only to a single active GM and must come from a player who sent or received the whisper. Failed saves no longer report approval.
+- Fixed whispers containing only images being treated as empty messages.
+- Fixed Chat and Whisper messages merging into the same group.
+- Fixed mention tracking keeping chat elements in memory without an active highlight.
+- Fixed missing images when pasting or dropping multiple images. Image paste and drop handling now applies only to the chat editor.
+- Preserved message edits made during image uploads and added error notifications for failed uploads or message updates.
+- Restored chronological message order after unpinning.
+
 ##### 1.7.2
+
 - Fixed an issue where all users received a visual notification whenever a Whisper was sent.
 - Fixed an issue where message merging in the Whisper tab combined messages sent to different users.
 
 ##### 1.7.1
+
 - Switching tabs now scrolls to the most recent message.
   - If there are unread mentions, the tab scrolls to the oldest one instead.
 - Added a `Jump to Next Mention` button to make unread mentions easier to find.
@@ -10,6 +22,7 @@
   - Using `Jump to Next Mention` removes the highlight from the previous mention.
 
 ##### 1.7.0
+
 - Added support for sending media in chat.
   - Supported file formats are `PNG`, `JPG/JPEG`, `WEBP`, and `GIF`.
     - All formats except `GIF` are compressed to `WEBP` to reduce file size.
@@ -28,6 +41,7 @@
 - Changed the ping color to white so it is not overridden by themes from other modules.
 
 ##### 1.6.3
+
 - Changed the Whisper tab icon to a more intuitive design.
 - Added a sound notification for incoming Whisper messages.
 - Sending a message while the Whisper tab is open now replies to the last user who sent you a Whisper.
@@ -40,31 +54,39 @@
 - Improved `Autocomplete Whisper` behavior when holding Shift.
 
 ##### 1.6.2
+
 - Improved the Settings interface.
 
 ##### 1.6.1
+
 - Removed debug mode.
 - Added an anonymous feedback button for GMs only.
 
 ##### 1.6.0
+
 - Added Chat Pins.
   - Players can now request message pins from GMs through the Whisper tab.
   - Added a Pin Manager button for managing pins across all tabs.
 
 ##### 1.5.1
+
 - Removed the option to reset settings.
 
 ##### 1.5.0
+
 - Added Hide Chat Formatting, which removes ProseMirror formatting from chat.
 - Reorganized the Settings menu.
 
 ##### 1.4.5
+
 - Added an option to restore the default settings.
 - Debug mode can now be enabled or disabled instead of always being active.
 
 ##### 1.0.1 - 1.4.4
+
 - Fixed bugs.
 - Added Autocomplete Whisper, Hide Private Messages, and Hide Chat Initiative as optional features.
 
 ##### 1.0.0
+
 - Initial release.

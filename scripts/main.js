@@ -32,6 +32,8 @@ const SHOW_FORMULA_CLASS = "daavy-chat-show";
 const ROLL_SELECTOR = ".dice-roll";
 const ROLL_TITLE_SELECTOR = ".dice-roll h4";
 const FORMULA_SELECTOR = ".dice-formula";
+const PIN_REQUEST_QUERY = `${MODULE_ID}.pinRequest`;
+const PIN_REQUEST_TIMEOUT = 300_000;
 
 export class HideChatInitiative {
     static preCreateChatMessage(message, creationData) {
@@ -331,18 +333,17 @@ export class AutocompleteWhisper {
             ? `@${suggestion.name}`
             : `[${recipients.join(", ")}]`;
         const trailingSpace = /^\s/.test(textAfterMatch) ? "" : " ";
-        replaceEditorRange(
-            state,
-            match.targetStart,
-            match.targetEnd,
-            `${replacement}${trailingSpace}`,
-            replacement.length + 1,
-        );
+        replaceEditorRange(state, {
+            startOffset: match.targetStart,
+            endOffset: match.targetEnd,
+            replacement: `${replacement}${trailingSpace}`,
+            caretOffset: replacement.length + 1
+        });
         persist ? this._updateSuggestions(host) : hidePopup(state);
     }
 }
 
-function replaceEditorRange(state, startOffset, endOffset, replacement, caretOffset = replacement.length) {
+function replaceEditorRange(state, { startOffset, endOffset, replacement, caretOffset = replacement.length }) {
     const editable = state.editable;
     const documentRef = getDocument(editable);
     const selection = documentRef.getSelection?.();
@@ -353,7 +354,7 @@ function replaceEditorRange(state, startOffset, endOffset, replacement, caretOff
     selection.removeAllRanges();
     selection.addRange(range);
 
-    if (!insertText(documentRef, editable, range, replacement)) {
+    if (!insertText(documentRef, range, replacement)) {
         dispatchInput(editable, replacement);
     }
 
@@ -372,7 +373,7 @@ function createTextRange(rootElement, start, end) {
     return range;
 }
 
-function insertText(documentRef, editable, range, replacement) {
+function insertText(documentRef, range, replacement) {
     if (typeof documentRef.execCommand === "function" && documentRef.execCommand("insertText", false, replacement)) {
         return true;
     }
@@ -671,8 +672,7 @@ export class ChatPins {
     static pendingRequest = null;
 
     static onReady() {
-        if (!game.socket?.on) return;
-        game.socket.on(`module.${MODULE_ID}`, payload => this._handleSocket(payload));
+        CONFIG.queries[PIN_REQUEST_QUERY] = (request, { user }) => this._handlePinRequest(request, user);
     }
 
     static processMessage(message, renderedHtml) {
@@ -697,7 +697,11 @@ export class ChatPins {
     static async unpinMessages(messages = []) {
         for (const message of messages) {
             if (!isPinnedMessage(message)) continue;
-            await this._setPinnedFlag(message, false);
+            try {
+                await this._setPinnedFlag(message, false);
+            } catch (error) {
+                this._reportPinError(error);
+            }
         }
     }
 
@@ -768,7 +772,7 @@ export class ChatPins {
             })),
             messages: activeMessages.map(message => ({
                 id: message.id,
-                author: this._getMessageAuthor(message) || message.id,
+                author: message.alias || message.id,
                 time: this._getMessageTime(message),
                 preview: this._getTextPreview(message.content)
             }))
@@ -786,21 +790,35 @@ export class ChatPins {
         if (!messageList) return;
 
         const messageElements = Array.from(messageList.querySelectorAll(CHAT_SELECTORS.MESSAGE_ID));
-        const pinnedElements = messageElements.filter(messageElement => {
+        for (const messageElement of messageElements) {
             const message = game.messages.get(messageElement.dataset.messageId);
             const pinned = isPinnedMessage(message);
             const mode = this._getPinMode(message, classifyMessage(message), pinned);
             this._setPinnedState(messageElement, pinned, mode);
-            return pinned;
-        });
+        }
 
-        pinnedElements.reverse().forEach(messageElement => messageList.prepend(messageElement));
+        const orderedElements = messageElements.toSorted((first, second) => {
+            const firstMessage = game.messages.get(first.dataset.messageId);
+            const secondMessage = game.messages.get(second.dataset.messageId);
+            return Number(isPinnedMessage(secondMessage)) - Number(isPinnedMessage(firstMessage))
+                || (firstMessage?.timestamp ?? 0) - (secondMessage?.timestamp ?? 0);
+        });
+        if (orderedElements.some((element, index) => element !== messageElements[index])) {
+            messageList.prepend(...orderedElements);
+        }
     }
 
     static _getPinMode(message, messageType, pinned) {
         if (game.user?.isGM && message?.setFlag) return "pin";
-        if (!game.user?.isGM && messageType === MESSAGE_TYPES.WHISPER && !pinned && message?.id) return "request";
+        if (messageType === MESSAGE_TYPES.WHISPER && !pinned && this._canRequestPin(message, game.user)) return "request";
         return null;
+    }
+
+    static _canRequestPin(message, requester) {
+        return !!message?.id && !!requester && !requester.isGM
+            && classifyMessage(message) === MESSAGE_TYPES.WHISPER
+            && !isPinnedMessage(message)
+            && (message.author?.id === requester.id || message.whisper?.includes(requester.id));
     }
 
     static _injectToggle(message, messageElement, pinned, mode) {
@@ -816,7 +834,11 @@ export class ChatPins {
             event.preventDefault();
             event.stopPropagation();
             if (mode === "pin") {
-                await message.setFlag(MODULE_ID, "pinned", isPinnedMessage(message) ? null : true);
+                try {
+                    await this._setPinnedFlag(message, !isPinnedMessage(message));
+                } catch (error) {
+                    this._reportPinError(error);
+                }
             } else {
                 this.requestPin(message);
             }
@@ -884,82 +906,80 @@ export class ChatPins {
         toggle.innerHTML = `<i class="fas fa-thumbtack"></i>`;
     }
 
-    static requestPin(message) {
+    static async requestPin(message) {
+        if (!this._canRequestPin(message, game.user)) return;
+
         const targetGm = game.users.contents.find(user => user.active && user.isGM);
         if (!targetGm) {
             globalThis.ui?.notifications?.warn?.(game.i18n.localize(i18nKey("Pin.NoGm")));
             return;
         }
 
-        game.socket?.emit?.(`module.${MODULE_ID}`, {
-            type: "pinRequest",
-            requestId: foundry.utils.randomID(),
-            requesterId: game.user.id,
-            requesterName: game.user.name,
-            targetGmId: targetGm.id,
-            messageId: message.id,
-            messageContent: message.content,
-            messageAuthor: this._getMessageAuthor(message),
-            messageTo: this._getMessageRecipients(message),
-            messageTime: this._getMessageTime(message)
-        });
-        globalThis.ui?.notifications?.info?.(game.i18n.localize(i18nKey("Pin.Sent")));
+        try {
+            const response = targetGm.query(PIN_REQUEST_QUERY, { messageId: message.id }, { timeout: PIN_REQUEST_TIMEOUT });
+            ui.notifications.info(game.i18n.localize(i18nKey("Pin.Sent")));
+            this._notifyPinResponse(await response);
+        } catch (error) {
+            this._reportPinError(error);
+        }
     }
 
-    static async _handleSocket(payload) {
-        if (!payload || typeof payload !== "object") return;
-        if (payload.type === "pinRequest") return this._handlePinRequest(payload);
-        if (payload.type === "pinResponse") return this._handlePinResponse(payload);
-    }
-
-    static _handlePinResponse(response) {
-        if (response.requesterId !== game.user?.id) return;
-
+    static _notifyPinResponse(status) {
         const notificationKey = {
             approved: i18nKey("Pin.Approved"),
             denied: i18nKey("Pin.Denied"),
-            busy: i18nKey("Pin.Busy")
-        }[response.status];
+            busy: i18nKey("Pin.Busy"),
+            failed: i18nKey("Pin.Error")
+        }[status];
         if (!notificationKey) return;
 
-        const notify = response.status === "busy" || response.status === "denied" ? "warn" : "info";
+        const notify = status === "approved" ? "info" : "warn";
         globalThis.ui?.notifications?.[notify]?.(game.i18n.localize(notificationKey));
     }
 
-    static async _handlePinRequest(request) {
-        if (!game.user?.isGM || request.targetGmId !== game.user.id) return;
-
-        if (this.pendingRequest) {
-            this._sendPinResponse(request, "busy");
-            return;
-        }
+    static async _handlePinRequest(request, requester) {
+        if (!game.user?.isGM || !request || typeof request.messageId !== "string") return "denied";
+        const message = game.messages.get(request.messageId);
+        if (!this._canRequestPin(message, requester)) return "denied";
+        if (this.pendingRequest) return "busy";
 
         this.pendingRequest = request;
-        await this._showPinRequestDialog(request);
+        try {
+            return await this._showPinRequestDialog(message, requester);
+        } finally {
+            this.pendingRequest = null;
+        }
     }
 
-    static async _showPinRequestDialog(request) {
-        const resolveRequest = async (status) => {
-            if (this.pendingRequest?.requestId !== request.requestId) return;
-            this.pendingRequest = null;
-            if (status === "approved") {
-                const message = game.messages.get(request.messageId);
-                if (message) await this._setPinnedFlag(message, true);
-            }
-            this._sendPinResponse(request, status);
-        };
+    static async _approvePinRequest(messageId, requester) {
+        const message = game.messages.get(messageId);
+        if (!this._canRequestPin(message, requester)) return "denied";
+        try {
+            await this._setPinnedFlag(message, true);
+            return "approved";
+        } catch (error) {
+            this._reportPinError(error);
+            return "failed";
+        }
+    }
 
-        new foundry.applications.api.DialogV2({
+    static _reportPinError(error) {
+        console.error(`${MODULE_ID} | Unable to update message pins.`, error);
+        ui.notifications.error(game.i18n.localize(i18nKey("Pin.Error")));
+    }
+
+    static async _showPinRequestDialog(message, requester) {
+        return await foundry.applications.api.DialogV2.wait({
             window: { title: game.i18n.localize(i18nKey("Pin.RequestTitle")) },
             modal: true,
             content: await renderTemplate(PIN_TEMPLATE_PATH, {
                 pinRequest: true,
                 requesterLabel: game.i18n.localize(i18nKey("Pin.Requester")),
-                requesterName: request.requesterName,
-                author: request.messageAuthor,
-                to: request.messageTo,
-                time: request.messageTime,
-                messageContent: request.messageContent ?? ""
+                requesterName: requester.name,
+                author: message.alias,
+                to: this._getMessageRecipients(message),
+                time: this._getMessageTime(message),
+                messageContent: message.content ?? ""
             }),
             buttons: [
                 {
@@ -968,33 +988,22 @@ export class ChatPins {
                     label: game.i18n.localize(i18nKey("Pin.Accept")),
                     class: "daavy-chat-pin-accept",
                     default: true,
-                    callback: () => resolveRequest("approved")
+                    callback: () => this._approvePinRequest(message.id, requester)
                 },
                 {
                     action: "denied",
                     icon: "fas fa-times",
                     label: game.i18n.localize(i18nKey("Pin.Deny")),
                     class: "daavy-chat-pin-deny",
-                    callback: () => resolveRequest("denied")
+                    callback: () => "denied"
                 }
             ],
-            close: () => resolveRequest("denied"),
             rejectClose: false
-        }).render({ force: true });
+        }) ?? "denied";
     }
 
     static async _setPinnedFlag(message, pinned) {
-        if (typeof message?.setFlag !== "function") return false;
-        try {
-            await message.setFlag(MODULE_ID, "pinned", pinned ? true : null);
-            return true;
-        } catch {
-            return false;
-        }
-    }
-
-    static _getMessageAuthor(message) {
-        return message.speaker?.alias ?? game.users.get?.(message.user?.id ?? message.user)?.name ?? "";
+        await message.setFlag(MODULE_ID, "pinned", pinned ? true : null);
     }
 
     static _getMessageRecipients(message) {
@@ -1018,16 +1027,6 @@ export class ChatPins {
         const preview = documentRef.createElement("div");
         preview.innerHTML = content;
         return (preview.textContent || "").trim().slice(0, 120);
-    }
-
-    static _sendPinResponse(request, status) {
-        game.socket?.emit?.(`module.${MODULE_ID}`, {
-            type: "pinResponse",
-            requestId: request.requestId,
-            requesterId: request.requesterId,
-            messageId: request.messageId,
-            status
-        });
     }
 
 }
@@ -1351,7 +1350,8 @@ export class ChatTabsManager {
     static _isEmptyWhisperContent(content) {
         const template = globalThis.document.createElement("template");
         template.innerHTML = content ?? "";
-        return !(template.content.textContent ?? "").replace(/[\u00a0\u200b]/g, "").trim();
+        return !(template.content.textContent ?? "").replace(/[\u00a0\u200b]/g, "").trim()
+            && !template.content.querySelector("img[src]");
     }
 
     static _canWhisper(recipients) {
@@ -1580,15 +1580,32 @@ class UserMentions {
     static processMessage(message, messageElement) {
         if (!message?.id || !messageElement) return;
 
+        this.highlightMessage(messageElement);
+        const mentioned = this.mentionsUser(message, game.user);
+        if (!mentioned || this._expired.has(message.id)) {
+            const elements = this._elements.get(message.id);
+            elements?.delete(messageElement);
+            if (!elements?.size) this._elements.delete(message.id);
+            return this._clearHighlight(messageElement);
+        }
+
         const elements = this._elements.get(message.id) ?? new Set();
         elements.add(messageElement);
         this._elements.set(message.id, elements);
-        this.highlightMessage(messageElement);
-        const mentioned = this.mentionsUser(message, game.user);
-        if (!mentioned || this._expired.has(message.id)) return this._clearHighlight(messageElement);
-
         this._applyHighlight(messageElement);
         if (ChatTabsManager.activeTab === classifyMessage(message)) this._schedule(message, messageElement);
+    }
+
+    static _pruneElements() {
+        for (const [messageId, elements] of this._elements) {
+            for (const element of elements) {
+                if (!element.isConnected) elements.delete(element);
+            }
+            if (!elements.size) this._elements.delete(messageId);
+        }
+        for (const messageId of this._expired) {
+            if (!game.messages.has(messageId)) this._expired.delete(messageId);
+        }
     }
 
     static activate(tabId, container = null) {
@@ -1643,53 +1660,10 @@ class UserMentions {
         if (!contentElement || !users.length) return;
 
         const userByName = new Map(users.map(({ user, name }) => [name.toLowerCase(), user]));
-        const names = users
-            .map(({ name }) => escapeRegex(name))
-            .sort((first, second) => second.length - first.length);
-        const mentionPattern = new RegExp(
-            `(^|[^\\p{L}\\p{N}_])(@(${names.join("|")}))(?=$|[^\\p{L}\\p{N}_])`,
-            "giu"
-        );
-        const documentRef = getDocument(contentElement);
-        const nodeFilter = documentRef.defaultView?.NodeFilter ?? globalThis.NodeFilter;
-        if (!nodeFilter) return;
-
-        const textNodes = [];
-        const walker = documentRef.createTreeWalker(contentElement, nodeFilter.SHOW_TEXT);
-        let textNode = walker.nextNode();
-        while (textNode) {
-            if (!textNode.parentElement?.closest(`.${CHAT_CLASSES.MENTION}`)) textNodes.push(textNode);
-            textNode = walker.nextNode();
+        const mentionPattern = getMentionPattern(users);
+        for (const textNode of getMentionTextNodes(contentElement)) {
+            colorMentionText(textNode, mentionPattern, userByName);
         }
-
-        textNodes.forEach(node => {
-            const text = node.textContent ?? "";
-            let lastIndex = 0;
-            let replaced = false;
-            const fragment = documentRef.createDocumentFragment();
-            mentionPattern.lastIndex = 0;
-
-            for (const match of text.matchAll(mentionPattern)) {
-                const user = userByName.get(match[2].slice(1).toLowerCase());
-                if (!user) continue;
-
-                const mentionStart = match.index + match[1].length;
-                fragment.append(text.slice(lastIndex, mentionStart));
-
-                const mention = documentRef.createElement("span");
-                mention.className = CHAT_CLASSES.MENTION;
-                mention.style.setProperty("color", user.color.css, "important");
-                mention.textContent = match[2];
-                fragment.append(mention);
-
-                lastIndex = mentionStart + match[2].length;
-                replaced = true;
-            }
-
-            if (!replaced) return;
-            fragment.append(text.slice(lastIndex));
-            node.replaceWith(fragment);
-        });
     }
 
     static notify(message) {
@@ -1705,6 +1679,54 @@ class UserMentions {
         const content = getMessageText(message.content);
         return hasMention(content, user.name);
     }
+}
+
+function getMentionPattern(users) {
+    const names = users.map(({ name }) => escapeRegex(name))
+        .sort((first, second) => second.length - first.length);
+    return new RegExp(`(^|[^\\p{L}\\p{N}_])(@(${names.join("|")}))(?=$|[^\\p{L}\\p{N}_])`, "giu");
+}
+
+function getMentionTextNodes(contentElement) {
+    const documentRef = getDocument(contentElement);
+    const nodeFilter = documentRef.defaultView?.NodeFilter ?? globalThis.NodeFilter;
+    if (!nodeFilter) return [];
+
+    const textNodes = [];
+    const walker = documentRef.createTreeWalker(contentElement, nodeFilter.SHOW_TEXT);
+    let textNode = walker.nextNode();
+    while (textNode) {
+        if (!textNode.parentElement?.closest(`.${CHAT_CLASSES.MENTION}`)) textNodes.push(textNode);
+        textNode = walker.nextNode();
+    }
+    return textNodes;
+}
+
+function colorMentionText(textNode, mentionPattern, userByName) {
+    const text = textNode.textContent ?? "";
+    const documentRef = getDocument(textNode);
+    const fragment = documentRef.createDocumentFragment();
+    let lastIndex = 0;
+    mentionPattern.lastIndex = 0;
+    for (const match of text.matchAll(mentionPattern)) {
+        const user = userByName.get(match[2].slice(1).toLowerCase());
+        if (!user) continue;
+
+        const mentionStart = match.index + match[1].length;
+        fragment.append(text.slice(lastIndex, mentionStart), createColoredMention(documentRef, user, match[2]));
+        lastIndex = mentionStart + match[2].length;
+    }
+    if (!lastIndex) return;
+    fragment.append(text.slice(lastIndex));
+    textNode.replaceWith(fragment);
+}
+
+function createColoredMention(documentRef, user, mentionText) {
+    const mention = documentRef.createElement("span");
+    mention.className = CHAT_CLASSES.MENTION;
+    mention.style.setProperty("color", user.color.css, "important");
+    mention.textContent = mentionText;
+    return mention;
 }
 
 function getMentionUsers() {
@@ -1742,6 +1764,7 @@ class MessageMerge {
     }
 
     static refresh(messageList) {
+        UserMentions._pruneElements();
         const messageElements = Array.from(messageList.children)
             .filter(element => element.matches?.(CHAT_SELECTORS.MESSAGE_ID));
 
@@ -1775,8 +1798,9 @@ class MessageMerge {
     }
 
     static _sameWhisperTargets(firstMessage, secondMessage) {
-        if (classifyMessage(firstMessage) !== MESSAGE_TYPES.WHISPER
-            || classifyMessage(secondMessage) !== MESSAGE_TYPES.WHISPER) return true;
+        const firstType = classifyMessage(firstMessage);
+        if (firstType !== classifyMessage(secondMessage)) return false;
+        if (firstType !== MESSAGE_TYPES.WHISPER) return true;
 
         const firstTargets = new Set(firstMessage.whisper ?? []);
         const secondTargets = new Set(secondMessage.whisper ?? []);
